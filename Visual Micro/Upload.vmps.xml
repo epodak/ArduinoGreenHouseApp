@@ -9,27 +9,95 @@
       <VCCodeMacros />
     </VCCodeModel>
     <BreakPoints>
-      <BreakPoint Index="1" Name="GreenHouseApp.ino, line 151" Id="4fa096ee-66da-4075-92de-999943054f20" Enabled="1" Message="millis is currently {millis()}" MessageTextType="0" PreProcessedMessage="millis is currently {0}" Condition="millis()&gt;0 || millis()&gt;1" ConditionType="1" CurrentHits="0" File="c:\program files (x86)\arduino\examples\arduinogreenhouseapp\greenhouseapp.ino" FileLine="151" FileColumn="1" FunctionName="" FunctionLineOffset="1" FunctionColumnOffset="1" HitCountTarget="250" HitCountType="4" Language="C++" LocationType="3" Tag="&lt;vmbp Id='4fa096ee-66da-4075-92de-999943054f20'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="1">
-        <Source>144	
-145		//pinMode(outputEthernetShieldEthernetPin, OUTPUT);
-146	
-147	
-148	
-149	}
+      <BreakPoint Index="1" Name="GreenHouseApp.ino, line 154" Id="4fa096ee-66da-4075-92de-999943054f20" Enabled="1" Message="millis is currently {millis()}" MessageTextType="0" PreProcessedMessage="millis is currently {0}" Condition="millis()&gt;0 || millis()&gt;1" ConditionType="1" CurrentHits="0" File="c:\program files (x86)\arduino\examples\arduinogreenhouseapp\greenhouseapp.ino" FileLine="154" FileColumn="1" FunctionName="" FunctionLineOffset="1" FunctionColumnOffset="1" HitCountTarget="250" HitCountType="4" Language="C++" LocationType="3" Tag="&lt;vmbp Id='4fa096ee-66da-4075-92de-999943054f20'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="1">
+        <Source>147	
+148		//pinMode(outputEthernetShieldEthernetPin, OUTPUT);
+149	
 150	
---&gt;151	void loop()
-152	{
+151	
+152	}
 153	
-154		checkWebRequest();
-155	
-156		card-&gt;SDWriteLogPins("2015-01-12 12:00:01");
-157		card-&gt;SDGetCardInfo();
+--&gt;154	void loop()
+155	{
+156	
+157		checkWebRequest();
 158	
-159		delay(3000);
-160	
+159		card-&gt;SDWriteLogPins("2015-01-12 12:00:01");
+160		card-&gt;SDGetCardInfo();
+161	
+162		delay(3000);
+163	
 </Source>
         <MessageVariables>
           <MessageVariable Name="millis()" Index="1" />
+        </MessageVariables>
+      </BreakPoint>
+      <BreakPoint Index="2" Name="GreenHouseApp.ino, line 183" Id="86422e0c-5e86-46f2-bd91-6f3ac5c1ebaf" Enabled="1" Message="c = {c}; currentLineIsBlank = {currentLineIsBlank} " MessageTextType="0" PreProcessedMessage="c = {0}; currentLineIsBlank = {1} " Condition="" ConditionType="1" CurrentHits="0" File="c:\program files (x86)\arduino\examples\arduinogreenhouseapp\greenhouseapp.ino" FileLine="183" FileColumn="1" FunctionName="checkWebRequest()" FunctionLineOffset="16" FunctionColumnOffset="1" HitCountTarget="1" HitCountType="1" Language="C++" LocationType="3" Tag="&lt;vmbp Id='86422e0c-5e86-46f2-bd91-6f3ac5c1ebaf'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="0">
+        <Source>176				//Serial.println("Client Connected!");
+177				if (client.available()) {   // client data available to read
+178					//Serial.println("Client Available!");
+179					char c = client.read(); // read 1 byte (character) from client
+180					// last line of client request is blank and ends with \n
+181					// respond to client only after last line received
+182					Serial.print(c); 
+--&gt;183					if (c == '\n' &amp;&amp; currentLineIsBlank) {
+184						// send a standard http response header
+185						Serial.println("ended :)"); 
+186						client.println("HTTP/1.1 200 OK");
+187						client.println("Content-Type: text/html");
+188						client.println("Connection: close");
+189						client.println();
+190						// send web page   
+191						if (card-&gt;GetFile(IndexFile))
+192						{						
+</Source>
+        <MessageVariables>
+          <MessageVariable Name="c" Index="1" />
+          <MessageVariable Name="currentLineIsBlank" Index="2" />
+        </MessageVariables>
+      </BreakPoint>
+      <BreakPoint Index="3" Name="GreenHouseApp.ino, line 193" Id="a6dc0c64-e9a9-46a9-9cc9-c0f82bf06c5d" Enabled="1" Message="" MessageTextType="2" PreProcessedMessage="" Condition="" ConditionType="1" CurrentHits="0" File="c:\program files (x86)\arduino\examples\arduinogreenhouseapp\greenhouseapp.ino" FileLine="193" FileColumn="1" FunctionName="checkWebRequest()" FunctionLineOffset="26" FunctionColumnOffset="1" HitCountTarget="1" HitCountType="1" Language="C++" LocationType="3" Tag="&lt;vmbp Id='a6dc0c64-e9a9-46a9-9cc9-c0f82bf06c5d'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="1">
+        <Source>186						client.println("HTTP/1.1 200 OK");
+187						client.println("Content-Type: text/html");
+188						client.println("Connection: close");
+189						client.println();
+190						// send web page   
+191						if (card-&gt;GetFile(IndexFile))
+192						{						
+--&gt;193							int16_t inchar = card-&gt;file.read();
+194							Serial.println(inchar);
+195							Serial.println("Got File!!");
+196							while (inchar &gt;= 0) {							
+197								client.print((char)inchar); // send web page to client
+198								Serial.print((char)inchar);
+199								inchar = card-&gt;file.read();
+200							}
+201							card-&gt;file.close();
+202						}
+</Source>
+      </BreakPoint>
+      <BreakPoint Index="4" Name="GreenHouseApp.ino, line 89" Id="136bcac3-3d39-45cb-a06d-d8b6a2d9fdfb" Enabled="1" Message="filename is {filename} is file: {file.isFile()}" MessageTextType="0" PreProcessedMessage="filename is {0} is file: {1}" Condition="" ConditionType="1" CurrentHits="0" File="c:\program files (x86)\arduino\examples\arduinogreenhouseapp\greenhouseapp.ino" FileLine="89" FileColumn="1" FunctionName="class SDCard::GetFile(char *filename)" FunctionLineOffset="2" FunctionColumnOffset="1" HitCountTarget="1" HitCountType="1" Language="C++" LocationType="3" Tag="&lt;vmbp Id='136bcac3-3d39-45cb-a06d-d8b6a2d9fdfb'/&gt;" Type="1" ToString="System.__ComObject" BreakWhenHit="0">
+        <Source>82	
+83			// list all files in the card with date and size
+84			root.ls(LS_R | LS_DATE | LS_SIZE);
+85			Serial.println();
+86		}
+87	
+88		bool GetFile(char *filename){
+--&gt;89			file.open(root, filename, O_READ);
+90			if(!file.isFile()) {
+91				Serial.println("ERROR - Can't find file!");
+92				return false;  // can't find index file
+93			}
+94			else
+95			{
+96				return true;
+97			}
+98			
+</Source>
+        <MessageVariables>
+          <MessageVariable Name="filename" Index="1" />
+          <MessageVariable Name="file.isFile()" Index="2" />
         </MessageVariables>
       </BreakPoint>
     </BreakPoints>

@@ -12,6 +12,8 @@ class SDCard
 {
 public:
 
+	SdFile file;
+
 	void initRoot(int chipSelected)
 	{
 		chipSelect = chipSelected;
@@ -83,17 +85,18 @@ public:
 		Serial.println();
 	}
 
-	//boolean WebFileExists(){
-	//	if(!SD.exists("index.htm")) {
-	//		Serial.println("ERROR - Can't find index.htm file!");
-	//		return false;  // can't find index file
-	//	}
-	//	else
-	//	{
-	//		return true;
-	//	}
-	//	
-	//}
+	bool GetFile(char *filename){
+		file.open(root, filename, O_READ);
+		if(!file.isFile()) {
+			Serial.println("ERROR - Can't find file!");
+			return false;  // can't find index file
+		}
+		else
+		{
+			return true;
+		}
+		
+	}
 
 private:
 	int chipSelect;
@@ -115,7 +118,7 @@ SDCard *card;
 
 // MAC address from Ethernet shield sticker under board
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-IPAddress ip(10, 0, 0, 20); // IP address, may need to change depending on network
+IPAddress ip(192, 168, 2, 120); // IP address, may need to change depending on network
 EthernetServer server(80);  // create a server at port 80
 
 File webFile;
@@ -163,28 +166,49 @@ void loop()
 
 void checkWebRequest()
 {
+	char *IndexFile = "index.htm";
 
 	EthernetClient client = server.available();  // try to get client
 	if (client) {  // got client?
+		Serial.println("Client!");
 		boolean currentLineIsBlank = true;
 		while (client.connected()) {
+			//Serial.println("Client Connected!");
 			if (client.available()) {   // client data available to read
+				//Serial.println("Client Available!");
 				char c = client.read(); // read 1 byte (character) from client
 				// last line of client request is blank and ends with \n
 				// respond to client only after last line received
+				Serial.print(c); 
 				if (c == '\n' && currentLineIsBlank) {
 					// send a standard http response header
+					Serial.println("ended :)"); 
 					client.println("HTTP/1.1 200 OK");
 					client.println("Content-Type: text/html");
 					client.println("Connection: close");
 					client.println();
-					// send web page
-					webFile = SD.open("index.htm");        // open web page file
-					if (webFile) {
-						while (webFile.available()) {
-							client.write(webFile.read()); // send web page to client
+					// send web page   
+					if (card->GetFile(IndexFile))
+					{						
+						int16_t inchar = card->file.read();
+						Serial.println(inchar);
+						Serial.println("Got File!!");
+						while (inchar >= 0) {							
+							client.print((char)inchar); // send web page to client
+							Serial.print((char)inchar);
+							inchar = card->file.read();
 						}
-						webFile.close();
+						card->file.close();
+					}
+					//webFile = SD.open("index.htm");        // open web page file
+					//if (webFile) {
+					//	while (webFile.available()) {
+					//		client.write(webFile.read()); // send web page to client
+					//	}
+					//	webFile.close();
+					//}
+					else{
+						Serial.println("Can not read Index!");
 					}
 					break;
 				}
@@ -200,7 +224,7 @@ void checkWebRequest()
 				}
 			} // end if (client.available())
 		} // end while (client.connected())
-		delay(1000);      // give the web browser time to receive the data
+		delay(5000);      // give the web browser time to receive the data
 		client.stop(); // close the connection
 	}
 	else{
