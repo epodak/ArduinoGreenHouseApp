@@ -1,12 +1,22 @@
 
-//ethernet SD chip uses digital pins 10, 11, 12, and 13 for SPI buss.
-
+/* 
+SPI bus: 11 (MOSI), 12(MISO), and 13(CLK)
+SPI Ethernet CS: 10
+SPI SD CS: 4
+*/
 
 #include <SPI.h>
 #include <SD.h>
 #include <Ethernet.h>
 
+#define BUFSIZ 100
+#define TIMEOUTMS 2000
 
+#define outputEthernetPin 10
+#define outputSdPin 4
+#define outputLcdPin 8
+
+#define SDI_CARD_SPEED SPI_HALF_SPEED
 
 
 class SDCard
@@ -18,13 +28,12 @@ public:
 	void initRoot(int chipSelected)
 	{
 		chipSelect = chipSelected;
-		if (!card.init(SPI_HALF_SPEED, chipSelect)){
+		if (!card.init(SDI_CARD_SPEED, chipSelect)){
 			Serialprintln("initialization failed.");
 			return;
 		}
 
 		if (!volume.init(card)) {
- 
 			Serialprintln("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
 			return;
 		}
@@ -35,8 +44,7 @@ public:
 
 	void SDWriteLogPins(String DateTimeStamp)
 	{
-		root.openRoot(volume);
-		//initRoot(chipSelect);
+		root.openRoot(volume);  //????
 
 		int numberOfPins = 6; //number of analog pins to log
 		String dataString = DateTimeStamp + ":";
@@ -49,12 +57,11 @@ public:
 		}
 
 		SdFile file;
-		file.open(root, "datalog.txt", O_CREAT | O_APPEND | O_WRITE);    //Open or create the file 'name' in 'root' for writing to the end of the file.
+		file.open(root, "datalog.txt", O_CREAT | O_APPEND | O_WRITE);    //Open or create the file
 		if (file.isFile()){
 
 			file.println(dataString);
 			file.close();
-			// print to the serial port too:
 			Serialprintln(dataString);
 		}
 		else{
@@ -64,13 +71,11 @@ public:
 
 	void SDGetCardInfo()
 	{
-		root.openRoot(volume);
-		//initRoot(chipSelect);
+		root.openRoot(volume); //????
 
-		// print the type and size of the first FAT-type volume
 		uint32_t volumesize;
 		Serialprint("\nVolume type is FAT");
-		Serial.println(volume.fatType(), DEC);
+		Serialprintln(volume.fatType(), DEC);
 		Serialprintln();
 		
 		volumesize = volume.blocksPerCluster();    // clusters are collections of blocks
@@ -80,7 +85,7 @@ public:
 		volumesize /= 1024;
 		Serialprintln(volumesize);
 		// list all files in the card with date and size
-		root.ls(LS_R | LS_DATE | LS_SIZE);
+		root.ls(LS_R | LS_DATE | LS_SIZE); //this one uses serial println?????????
 		Serialprintln();
 	}
 
@@ -88,7 +93,7 @@ public:
 		file.open(root, filename, O_READ);
 		if (!file.isFile()) {
 			Serialprintln("ERROR - Can't find file!");
-			return false;  // can't find index file
+			return false;
 		}
 		else
 		{
@@ -105,24 +110,11 @@ private:
 
 };
 
-
-
-// How big our line buffer should be. 100 is plenty!
-#define BUFSIZ 100
-#define TIMEOUTMS 2000
-
-#define outputEthernetPin 10
-#define outputSdPin 4
-#define outputLcdPin 8
-
 SDCard *card;
 
-// MAC address from Ethernet shield sticker under board
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-IPAddress ip(192, 168, 2, 120); // IP address, may need to change depending on network
-EthernetServer server(80);  // create a server at port 80
-
-//File webFile;
+IPAddress ip(192, 168, 2, 120);
+EthernetServer server(80);
 
 void setup()
 {
@@ -165,7 +157,6 @@ void loop()
 
 }
 
-
 void checkWebRequest()
 {
 	char *IndexFile = "index.htm";
@@ -174,27 +165,21 @@ void checkWebRequest()
 	int index = 0;
 	unsigned long timeoutStart = 0;
 
-
-
 	EthernetClient client = server.available();  // try to get client
 	if (client) {  // got client?
 		Serialprintln("Client!");
 		timeoutStart = millis();
 		while (client.connected()) {
-			//Serialprintln("Client Connected!");
 			if (client.available()) {   // client data available to read
-
+				/****************************READ REQUEST*************************************/
 				if (millis() - timeoutStart > TIMEOUTMS){
 					client.println("HTTP/1.1 404 Not Found");
 					client.println("Content-Type: text/html");
 					client.println("Connection: close");
 					client.println();
 					client.println("<html><head></head><body><h2>Timeout reached</h2><body></html>");
-					//delay(1);
-					//client.stop(); // close the connection
-					break;
+					break; //exit while
 				}
-
 
 				char c = client.read(); // read 1 byte (character) from client
 				// If it isn't a new line, add the character to the buffer
@@ -216,7 +201,8 @@ void checkWebRequest()
 				GET /temperature HTTP/1.1
 				GET /log HTTP/1.1
 				*/
-				clientline[index] = 0; //terminate string
+				clientline[index] = 0; //add string terminator
+				/****************************INDEX*************************************/
 				if (strstr(clientline, "GET / ") != 0) {  //Returns Index file!
 					client.println("HTTP/1.1 200 OK");
 					client.println("Content-Type: text/html");
@@ -239,8 +225,9 @@ void checkWebRequest()
 					else{
 						Serialprintln("Can not read Index!");
 					}
-					break;
+					break; //exit while
 				}
+				/****************************LOGFILE*************************************/
 				if (strstr(clientline, "GET /logfile ") != 0) {  //Returns size of log file file!
 					client.println("HTTP/1.1 200 OK");
 					client.println("Content-Type: application/json");
@@ -259,8 +246,9 @@ void checkWebRequest()
 					else{
 						Serialprintln("Can not read Data!");
 					}*/
-					break;
+					break; //exit while
 				}
+				/*******************************404*************************************/
 				else{
 					// everything else is a 404
 					client.println("HTTP/1.1 404 Not Found");
@@ -269,21 +257,19 @@ void checkWebRequest()
 					client.println();
 					client.println();
 					client.println("<html><head></head><body><h2>File Not Found!</h2><body></html>");
-					//delay(1);
-					//client.stop(); // close the connection
-					break;
-				}
-			}
-		} // end if (client.available())
-	} // end while (client.connected())
+					break; //exit while
+				}//end if logfile 
+				/**********************************************************************/
+			} // end if (client.available())
+		}// end while (client.connected())
+	}//end if client
 	delay(1);      // give the web browser time to receive the data
 	client.stop(); // close the connection
 }
 
 
 /* Temp functions */
-// comment out the next line to eliminate the Serial.print stuff
-// saves about 1.6K of program memory
+// comment out thhis line - Serial.print stuff saves about 1.6K of program memory!
 #define ServerDEBUG 1
 void Serialbegin(unsigned long val){
 #ifdef ServerDEBUG 
@@ -293,6 +279,7 @@ void Serialbegin(unsigned long val){
 	}
 #endif
 }
+
 void Serialprint(char* val){ 
 #ifdef ServerDEBUG 
 	Serial.print(val);
@@ -301,6 +288,16 @@ void Serialprint(char* val){
 void Serialprint(char val){
 #ifdef ServerDEBUG 
 	Serial.print(val);
+#endif
+}
+void Serialprint(uint32_t val){
+#ifdef ServerDEBUG 
+	Serial.println(val);
+#endif
+}
+void Serialprint(int16_t val){
+#ifdef ServerDEBUG 
+	Serial.println(val);
 #endif
 }
 void Serialprint(const String &val){
@@ -313,7 +310,13 @@ void Serialprint(unsigned int val1, int val2){
 	Serial.print(val1, val2);
 #endif
 }
+
 void Serialprintln(char* val){
+#ifdef ServerDEBUG 
+	Serial.println(val);
+#endif
+}
+void Serialprintln(char val){
 #ifdef ServerDEBUG 
 	Serial.println(val);
 #endif
@@ -323,13 +326,24 @@ void Serialprintln(uint32_t val){
 	Serial.println(val);
 #endif
 }
-void Serialprintln(){
+void Serialprintln(int16_t val){
 #ifdef ServerDEBUG 
-	Serial.println();
+	Serial.println(val);
 #endif
 }
 void Serialprintln(const String &val){
 #ifdef ServerDEBUG 
 	Serial.print(val);
+#endif
+}
+void Serialprintln(unsigned int val1, int val2){
+#ifdef ServerDEBUG 
+	Serial.print(val1, val2);
+#endif
+}
+
+void Serialprintln(){
+#ifdef ServerDEBUG 
+	Serial.println();
 #endif
 }

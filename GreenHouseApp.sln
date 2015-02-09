@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDCard", "SDCard", "{80BF1B
 		index.htm = index.htm
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{4EDFE5F0-85EC-478A-BF02-E4B6825A2CCC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -23,5 +25,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4EDFE5F0-85EC-478A-BF02-E4B6825A2CCC} = {80BF1B8B-56CB-4C70-9877-77FF3FF2DB24}
 	EndGlobalSection
 EndGlobal
