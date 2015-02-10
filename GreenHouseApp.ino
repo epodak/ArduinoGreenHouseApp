@@ -5,345 +5,324 @@ SPI Ethernet CS: 10
 SPI SD CS: 4
 */
 
-#include <SPI.h>
 #include <SD.h>
+#include <SdFat.h>
+#include <SdFatUtil.h>
 #include <Ethernet.h>
+#include <SPI.h>
+
+
 
 #define BUFSIZ 100
 #define TIMEOUTMS 2000
+#define LOGLINELENGTH 100
+#define SENSORVALUELENGTH 10
 
 #define outputEthernetPin 10
 #define outputSdPin 4
 #define outputLcdPin 8
 
-#define SDI_CARD_SPEED SPI_HALF_SPEED
+#define SDISPEED SPI_HALF_SPEED
 
-
-class SDCard
-{
-public:
-
-	SdFile file;
-
-	void initRoot(int chipSelected)
-	{
-		chipSelect = chipSelected;
-		if (!card.init(SDI_CARD_SPEED, chipSelect)){
-			Serialprintln("initialization failed.");
-			return;
-		}
-
-		if (!volume.init(card)) {
-			Serialprintln("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
-			return;
-		}
-
-		root.openRoot(volume);
-
-	}
-
-	void SDWriteLogPins(String DateTimeStamp)
-	{
-		root.openRoot(volume);  //????
-
-		int numberOfPins = 6; //number of analog pins to log
-		String dataString = DateTimeStamp + ":";
-		for (int analogPin = 0; analogPin < numberOfPins; analogPin++) {
-			int sensor = analogRead(analogPin);
-			dataString += String(sensor);
-			if (analogPin < (numberOfPins - 1)) {
-				dataString += ",";
-			}
-		}
-
-		SdFile file;
-		file.open(root, "datalog.txt", O_CREAT | O_APPEND | O_WRITE);    //Open or create the file
-		if (file.isFile()){
-
-			file.println(dataString);
-			file.close();
-			Serialprintln(dataString);
-		}
-		else{
-			Serialprintln("error opening datalog.txt");
-		}
-	}
-
-	void SDGetCardInfo()
-	{
-		root.openRoot(volume); //????
-
-		uint32_t volumesize;
-		Serialprint("\nVolume type is FAT");
-		Serialprintln(volume.fatType(), DEC);
-		Serialprintln();
-		
-		volumesize = volume.blocksPerCluster();    // clusters are collections of blocks
-		volumesize *= volume.clusterCount();       // we'll have a lot of clusters
-		volumesize *= 512;                            // SD card blocks are always 512 bytes 
-		Serialprint("Volume size (Mbytes): ");
-		volumesize /= 1024;
-		Serialprintln(volumesize);
-		// list all files in the card with date and size
-		root.ls(LS_R | LS_DATE | LS_SIZE); //this one uses serial println?????????
-		Serialprintln();
-	}
-
-	bool GetFile(char *filename){
-		file.open(root, filename, O_READ);
-		if (!file.isFile()) {
-			Serialprintln("ERROR - Can't find file!");
-			return false;
-		}
-		else
-		{
-			return true;
-		}
-
-	}
-
-private:
-	int chipSelect;
-	Sd2Card card;
-	SdVolume volume;
-	SdFile root;
-
-};
-
-SDCard *card;
-
+/************ ETHERNET STUFF ************/
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-IPAddress ip(192, 168, 2, 120);
+byte ip[] = { 192, 168, 2, 120 };
 EthernetServer server(80);
 
-void setup()
-{
+/************ SDCARD STUFF ************/
+Sd2Card card;
+SdVolume volume;
+SdFile root;
+SdFile file;
+char logLineLength[LOGLINELENGTH];
+char* sensorValue;
 
-	// Open serial communications and wait for port to open:
-	Serialbegin(9600);
-	
-	// disable w5100 SPI while starting SD
-	pinMode(outputEthernetPin, OUTPUT);
-	digitalWrite(outputEthernetPin, HIGH);
+// store error strings in flash to save RAM
+//#define error(s) error_P(PSTR(s))
+//
+//void error_P(const char* str) {
+//	PgmPrint("error: ");
+//	SerialPrintln_P(str);
+//	if (card.errorCode()) {
+//		PgmPrint("SD error: ");
+//		Serial.print(card.errorCode(), HEX);
+//		Serial.print(',');
+//		Serial.println(card.errorData(), HEX);
+//	}
+//	while (1);
+//}
 
-	card = new SDCard();
-	card->initRoot(outputSdPin);
-	//card->WebFileExists();
+void setup() {
 
+	logInit();	
+	sensorValue = (char*)malloc(sizeof(char) * SENSORVALUELENGTH);
 
-	Ethernet.begin(mac, ip);  // initialize Ethernet device
-	server.begin();           // start to listen for clients
+	pinMode(outputEthernetPin, OUTPUT);                       // set the SS pin as an output (necessary!)
+	digitalWrite(outputEthernetPin, HIGH);                    // but turn off the W5100 chip!
 
-	// make sure that the default chip select pin is set to
-	// output, even if you don't use it:
-	/*pinMode(outputEthernetShieldSDPin, OUTPUT);*/
-	//digitalWrite(outputEthernetShieldSDPin, HIGH);
-
-	//pinMode(outputEthernetShieldEthernetPin, OUTPUT);
-
-
-
+	SdInit();
+	EthernetInit();
 }
+
 
 void loop()
 {
-
-	checkWebRequest();
-
-	card->SDWriteLogPins("2015-01-12 12:00:01");
-	card->SDGetCardInfo();
+	checkForApiRequests();
+	SDWriteLogPins("2015-05-22 13:33:18");
 
 	delay(3000);
 
 }
 
-void checkWebRequest()
+
+void SdInit(){
+	if (!card.init(SDISPEED, outputSdPin)) error(F("card.init failed!"));
+	if (!volume.init(&card)) error(F("vol.init failed!"));
+	if (!root.openRoot(&volume)) error(F("openRoot failed"));
+}
+
+void SDWriteLogPins(const char* DateTimeStamp)
 {
-	char *IndexFile = "index.htm";
-	char *DataFile = "datalog.txt";
+	const int numOfPins = 6;
+	//// yyMMddhhmm+127,+127,+127,+127,+127,+127
+	//// 1234567890    12345
+
+	strcpy(logLineLength,DateTimeStamp);
+	strcat(logLineLength, ":");
+
+	for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
+		int sensor = analogRead(analogPin);
+		//dataString += String(sensor);
+		sensorValue = itoa(sensor, sensorValue, 10);
+		strcat(logLineLength, sensorValue);
+		if (analogPin < (numOfPins - 1)) {
+			strcat(logLineLength, ",");
+		}
+	}
+
+	SdFile file;
+	file.open(root, "datalog.txt", O_CREAT | O_APPEND | O_WRITE);    //Open or create the file
+	if (file.isFile()){
+
+		file.println(logLineLength);
+		file.close();
+		log(logLineLength);
+	}
+	else{
+		error(F("error opening datalog.txt"));
+	}
+}
+
+void EthernetInit(){
+	Ethernet.begin(mac, ip);
+	server.begin();
+}
+
+void checkForApiRequests()
+{
 	char clientline[BUFSIZ];
 	int index = 0;
-	unsigned long timeoutStart = 0;
 
-	EthernetClient client = server.available();  // try to get client
-	if (client) {  // got client?
-		Serialprintln("Client!");
-		timeoutStart = millis();
+	EthernetClient client = server.available();
+	if (client) {
+		index = 0;		// reset the input buffer
+
 		while (client.connected()) {
-			if (client.available()) {   // client data available to read
-				/****************************READ REQUEST*************************************/
-				if (millis() - timeoutStart > TIMEOUTMS){
-					client.println("HTTP/1.1 404 Not Found");
-					client.println("Content-Type: text/html");
-					client.println("Connection: close");
-					client.println();
-					client.println("<html><head></head><body><h2>Timeout reached</h2><body></html>");
-					break; //exit while
-				}
+			if (client.available()) {
+				char c = client.read();
 
-				char c = client.read(); // read 1 byte (character) from client
 				// If it isn't a new line, add the character to the buffer
-				Serialprint(c);
 				if (c != '\n' && c != '\r') {
 					clientline[index] = c;
 					index++;
 					// are we too big for the buffer? start tossing out data
-					if (index >= BUFSIZ)
-						index = BUFSIZ - 1;
-
-					// continue to read more data!					
-					continue; //go back to begining of while loop!
+					if (index >= BUFSIZ) index = BUFSIZ - 1;
+					// continue to read more data!
+					continue; //restart while
 				}
+
 				// got a \n or \r new line, which means the string is done
-				/*Examples:
-				GET / HTTP/1.1
-				GET /himidity HTTP/1.1
-				GET /temperature HTTP/1.1
-				GET /log HTTP/1.1
-				*/
-				clientline[index] = 0; //add string terminator
-				/****************************INDEX*************************************/
-				if (strstr(clientline, "GET / ") != 0) {  //Returns Index file!
-					client.println("HTTP/1.1 200 OK");
-					client.println("Content-Type: text/html");
-					client.println("Connection: close");
-					client.println();
+				clientline[index] = 0;
 
-					// send web page   
-					if (card->GetFile(IndexFile))
-					{
-						int16_t inchar = card->file.read();
-						Serialprintln(inchar);
-						Serialprintln("Got File!!");
-						while (inchar >= 0) {
-							client.print((char)inchar); // send web page to client
-							inchar = card->file.read();
-						}
-						card->file.close();
-						
-					}
-					else{
-						Serialprintln("Can not read Index!");
-					}
-					break; //exit while
-				}
-				/****************************LOGFILE*************************************/
-				if (strstr(clientline, "GET /logfile ") != 0) {  //Returns size of log file file!
-					client.println("HTTP/1.1 200 OK");
-					client.println("Content-Type: application/json");
-					client.println("Connection: close");		
+				// Print it out for debugging
+				log(clientline);
+
+				// Look for substring such as a request to get the root file
+				/*****************************home page*****************************************/
+				if (strstr(clientline, "GET / ") != 0) {
+					// send a standard http response header
+					client.println(F("HTTP/1.1 200 OK"));
+					client.println(F("Content-Type: text/html"));
+					client.println(F("Connection: close"));
 					client.println();
-					client.println(5);
-					/*if (card->GetFile(DataFile))
-					{
-						card->file.open(
-						client.print("{size:");
-						client.print(String(card->file..fileSize(), DEC));
-						client.print("b}");
+					client.println(F("<html><h2>Welcome</h2>"));
+					client.println(F("<ul>"));
+					client.println(F("<li><a href=\"files\">view list of files</a></li>"));
+					client.println(F("<li><a href=\"#\">current sensor values</a></li>"));
+					client.println(F("</ul></html>"));
+				}
+				/******************************check for files*********************************/
+				else if (strstr(clientline, "GET /file/") != 0) {
+					// this time no space after the /, so a sub-file!
+					char *filename;
+
+					filename = clientline + 10; // look after the "GET /file/" (10 chars)
+					// a little trick, look for the " HTTP/1.1" string and 
+					// turn the first character of the substring into a 0 to clear it out.
+					(strstr(clientline, " HTTP"))[0] = 0;
+
+					// print the file we want
+					log(filename);
+
+					if (!file.open(&root, filename, O_READ)) {
+						client.println(F("HTTP/1.1 404 Not Found"));
+						client.println(F("Content-Type: text/html"));
+						client.println(F("Connection: close"));
 						client.println();
-						card->file.close();
+						client.println(F("<h2>File Not Found!</h2>"));
+						break;
 					}
-					else{
-						Serialprintln("Can not read Data!");
-					}*/
-					break; //exit while
+
+					client.println(F("HTTP/1.1 200 OK"));
+					client.println(F("Content-Type: text/plain"));
+					client.println(F("Connection: close"));
+					client.println();
+
+					int16_t c;
+					while ((c = file.read()) > 0) {
+						client.print((char)c);
+					}
+					file.close();
 				}
-				/*******************************404*************************************/
-				else{
+				/*******************************************************************************/
+				else if (strstr(clientline, "GET /files") != 0) {
+					// send a standard http response header
+					client.println(F("HTTP/1.1 200 OK"));
+					client.println(F("Content-Type: text/html"));
+					client.println(F("Connection: close"));
+					client.println();
+					client.print(F("<p>Free RAM:"));
+					client.println(FreeRam());
+					client.print(F(" bytes</p>"));
+					// print all the files, use a helper to keep it clean
+					client.println(F("<h2>Files:</h2>"));
+					ListFiles(client, LS_SIZE ); //LS_SIZE | LS_DATE
+				}
+				/**********************************404******************************************/
+				else {
 					// everything else is a 404
-					client.println("HTTP/1.1 404 Not Found");
-					client.println("Content-Type: text/html");
-					client.println("Connection: close");
+					client.println(F("HTTP/1.1 404 Not Found"));
+					client.println(F("Content-Type: text/html"));
+					client.println(F("Connection: close"));
 					client.println();
-					client.println();
-					client.println("<html><head></head><body><h2>File Not Found!</h2><body></html>");
-					break; //exit while
-				}//end if logfile 
-				/**********************************************************************/
-			} // end if (client.available())
-		}// end while (client.connected())
-	}//end if client
-	delay(1);      // give the web browser time to receive the data
-	client.stop(); // close the connection
-}
-
-
-/* Temp functions */
-// comment out thhis line - Serial.print stuff saves about 1.6K of program memory!
-#define ServerDEBUG 1
-void Serialbegin(unsigned long val){
-#ifdef ServerDEBUG 
-	Serial.begin(val);
-	while (!Serial) {
-		; // wait for serial port to connect. Needed for Leonardo only
+					client.println(F("<h2>File Not Found!</h2>"));
+				}
+				break;
+			}
+		}
+		// give the web browser time to receive the data		
+		delay(1);
+		client.stop();
 	}
-#endif
+
 }
 
-void Serialprint(char* val){ 
-#ifdef ServerDEBUG 
-	Serial.print(val);
-#endif
-}
-void Serialprint(char val){
-#ifdef ServerDEBUG 
-	Serial.print(val);
-#endif
-}
-void Serialprint(uint32_t val){
-#ifdef ServerDEBUG 
-	Serial.println(val);
-#endif
-}
-void Serialprint(int16_t val){
-#ifdef ServerDEBUG 
-	Serial.println(val);
-#endif
-}
-void Serialprint(const String &val){
-#ifdef ServerDEBUG 
-	Serial.print(val);
-#endif
-}
-void Serialprint(unsigned int val1, int val2){
-#ifdef ServerDEBUG 
-	Serial.print(val1, val2);
-#endif
+void ListFiles(EthernetClient client, uint8_t flags) {
+	// This code is just copied from SdFile.cpp in the SDFat library
+	// and tweaked to print to the client output in html!
+	dir_t p;
+
+	root.rewind();
+	client.println("<ul>");
+	while (root.readDir(p) > 0) {
+		// done if past last used entry
+		if (p.name[0] == DIR_NAME_FREE) break;
+
+		// skip deleted entry and entries for . and  ..
+		if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') continue;
+
+		// only list subdirectories and files
+		if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
+
+		// print any indent spaces
+		client.print("<li><a href=\"file/");
+		for (uint8_t i = 0; i < 11; i++) {
+			if (p.name[i] == ' ') continue;
+			if (i == 8) {
+				client.print('.');
+			}
+			client.print((char)p.name[i]);
+		}
+		client.print("\">");
+
+		// print file name with possible blank fill
+		for (uint8_t i = 0; i < 11; i++) {
+			if (p.name[i] == ' ') continue;
+			if (i == 8) {
+				client.print('.');
+			}
+			client.print((char)p.name[i]);
+		}
+
+		client.print("</a>");
+
+		if (DIR_IS_SUBDIR(&p)) {
+			client.print('/');
+		}
+
+		// print modify date/time if requested
+		if (flags & LS_DATE) {
+			client.print(FAT_YEAR(p.lastWriteDate));
+			client.print('-');
+			printTwoDigits(client, FAT_MONTH(p.lastWriteDate));
+			client.print('-');
+			printTwoDigits(client, FAT_DAY(p.lastWriteDate));
+			client.print(' ');
+			printTwoDigits(client, FAT_HOUR(p.lastWriteTime));
+			Serial.print(':');
+			printTwoDigits(client, FAT_MINUTE(p.lastWriteTime));
+			Serial.print(':');
+			printTwoDigits(client, FAT_SECOND(p.lastWriteTime));
+
+		}
+		// print size if requested
+		if (!DIR_IS_SUBDIR(&p) && (flags & LS_SIZE)) {
+			client.print(' ');
+			client.print(p.fileSize);
+		}
+		client.println("</li>");
+	}
+	client.println("</ul>");
 }
 
-void Serialprintln(char* val){
-#ifdef ServerDEBUG 
-	Serial.println(val);
-#endif
-}
-void Serialprintln(char val){
-#ifdef ServerDEBUG 
-	Serial.println(val);
-#endif
-}
-void Serialprintln(uint32_t val){
-#ifdef ServerDEBUG 
-	Serial.println(val);
-#endif
-}
-void Serialprintln(int16_t val){
-#ifdef ServerDEBUG 
-	Serial.println(val);
-#endif
-}
-void Serialprintln(const String &val){
-#ifdef ServerDEBUG 
-	Serial.print(val);
-#endif
-}
-void Serialprintln(unsigned int val1, int val2){
-#ifdef ServerDEBUG 
-	Serial.print(val1, val2);
-#endif
+void printTwoDigits(EthernetClient client, uint8_t v) {
+	char str[3];
+	str[0] = '0' + v / 10;
+	str[1] = '0' + v % 10;
+	str[2] = 0;
+	client.print(str);
 }
 
-void Serialprintln(){
-#ifdef ServerDEBUG 
-	Serial.println();
-#endif
+void logInit(){
+	Serial.begin(9600);
+}
+
+void error(char* line){
+	//Serial.print(F("Error:"));
+	//Serial.println(line);
+}
+
+void error(const char* line){
+	//Serial.print(F("Error:"));
+	//Serial.println(line);
+}
+
+void error(const __FlashStringHelper*)
+{
+
+}
+
+void log(char* line){
+
+	//Serial.println(line);
 }
