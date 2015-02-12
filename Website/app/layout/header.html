@@ -1,0 +1,33 @@
+﻿
+<nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container">
+
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar123" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#"><i class="fa fa-leaf green"></i> Green House</a>
+    </div>
+
+
+    <div id="navbar123" class="navbar-collapse collapse" aria-expanded="false" style="height: 1px;">
+      <ul class="nav navbar-nav">
+        <li><a href="/#/test">test </a></li>
+        <li><a ng-show="layout.isLoggedIn" href="/#/userhome" >loged in page</a></li>
+        <li><a href="/#/notexist" >invalid page</a></li>
+      </ul>
+
+
+      <ul class="nav navbar-nav navbar-right">
+        
+        <li><a ng-hide="layout.isLoggedIn" href="/#/login" >login</a></li>
+        <li><a ng-hide="layout.isLoggedIn" href="/#/register" >register</a></li>
+        <li><a ng-show="layout.isLoggedIn" ng-click="layout.logout()" href="javascript:void(0)" >logout</a></li>
+      </ul>
+
+    </div> <!-- /.navbar-collapse -->
+  </div> <!-- /.container-fluid -->
+</nav>

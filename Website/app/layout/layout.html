@@ -1,0 +1,12 @@
+﻿
+<div data-ng-controller="layoutController as layout" ng-init="layout.getData()">
+
+  <div data-ng-include="'app/layout/header.html'"></div>
+
+  <div class="container body-content ui-view-container">
+    <div data-ui-view data-ng-ui-view-animate="zoomIn"></div>
+  </div>
+
+  <div data-ng-include="'app/layout/footer.html'"></div>
+
+</div>
