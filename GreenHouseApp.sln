@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDCard", "SDCard", "{80BF1B
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{4EDFE5F0-85EC-478A-BF02-E4B6825A2CCC}"
+	ProjectSection(SolutionItems) = preProject
+		libraries\arduino-ethernet-shield-06-schematic.pdf = libraries\arduino-ethernet-shield-06-schematic.pdf
+		libraries\Arduino_Uno_Rev3-schematic.pdf = libraries\Arduino_Uno_Rev3-schematic.pdf
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
