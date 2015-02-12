@@ -1,0 +1,14 @@
+Release (1412.10 Sp7) - 2nd February 2015
+Release (1412.10 Sp6) - 22th January 2015
+Release (1412.10 Sp4) - 15th January 2015
+
+
+(requires .net3.5 to be enabled)
+
+
+License Key: (in my GMAIL)
+
+
+VS>Tools>Options>VisualMicro>
+Version:1.1412.10
+Version Minor: 6 (aka SP)

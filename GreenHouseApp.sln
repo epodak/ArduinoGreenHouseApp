@@ -6,26 +6,66 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GreenHouseApp", "GreenHouseApp.vcxproj", "{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDCard", "SDCard", "{80BF1B8B-56CB-4C70-9877-77FF3FF2DB24}"
-	ProjectSection(SolutionItems) = preProject
-		index.htm = index.htm
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{4EDFE5F0-85EC-478A-BF02-E4B6825A2CCC}"
 	ProjectSection(SolutionItems) = preProject
 		libraries\arduino-ethernet-shield-06-schematic.pdf = libraries\arduino-ethernet-shield-06-schematic.pdf
 		libraries\Arduino_Uno_Rev3-schematic.pdf = libraries\Arduino_Uno_Rev3-schematic.pdf
+		..\..\libraries\DHT\examples\DHT22.pdf = ..\..\libraries\DHT\examples\DHT22.pdf
+	EndProjectSection
+EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "WebsiteApp", "http://localhost:65091", "{BB6A663C-630E-424F-9646-0470F4CA3773}"
+	ProjectSection(WebsiteProperties) = preProject
+		UseIISExpress = "true"
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5.1"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_65091"
+		Debug.AspNetCompiler.PhysicalPath = "WebsiteApp\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_65091\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_65091"
+		Release.AspNetCompiler.PhysicalPath = "WebsiteApp\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_65091\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		SlnRelativePath = "WebsiteApp\"
+		DefaultWebSiteLanguage = "Visual C#"
 	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|Win32 = Debug|Win32
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Debug|Win32.ActiveCfg = Debug|Win32
 		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Debug|Win32.Build.0 = Debug|Win32
+		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Release|Any CPU.ActiveCfg = Release|Win32
+		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Release|Win32.ActiveCfg = Release|Win32
 		{7E3C3D94-449F-4D8C-8F48-C178E03C7CC0}.Release|Win32.Build.0 = Release|Win32
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Release|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Release|Mixed Platforms.Build.0 = Debug|Any CPU
+		{BB6A663C-630E-424F-9646-0470F4CA3773}.Release|Win32.ActiveCfg = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

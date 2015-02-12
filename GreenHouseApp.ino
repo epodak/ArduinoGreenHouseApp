@@ -385,16 +385,9 @@ void ListFiles(EthernetClient client, uint8_t flags) {
 
 void printTwoDigits(EthernetClient client, uint8_t v) {
 	
-	//no buffer:
 	client.print('0' + v / 10);
 	client.print('0' + v % 10);
 	client.print(0);
-	
-	//char str[3];
-	//str[0] = '0' + v / 10;
-	//str[1] = '0' + v % 10;
-	//str[2] = 0;
-	//client.print(str);
 }
 
 /****************************Clock***************************************/
