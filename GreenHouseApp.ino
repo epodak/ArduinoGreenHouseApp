@@ -234,10 +234,11 @@ void checkForApiRequests()
 					client.println(F("<html><h2>Welcome</h2>"));
 					client.println(F("<ul>"));
 					client.println(F("<li><a href=\"files\">view list of files</a></li>"));
-					client.println(F("<li><a href=\"#\">current sensor values</a></li>"));
+					client.println(F("<li><a href=\"sensors\">current sensor values</a></li>"));
+					client.println(F("<li><a href=\"clock\">view and update app clock</a></li>"));
 					client.println(F("</ul></html>"));
 				}
-				/******************************check for files*********************************/
+				/****************************** file content *********************************/
 				else if (strstr(clientline, "GET /file/") != 0) {
 					// this time no space after the /, so a sub-file!
 					char *filename;
@@ -280,7 +281,7 @@ void checkForApiRequests()
 					}
 					file.close();
 				}
-				/*******************************************************************************/
+				/***************************** list files *************************************/
 				else if (strstr(clientline, "GET /files") != 0) {
 					// send a standard http response header
 					client.println(F("HTTP/1.1 200 OK"));
@@ -292,7 +293,19 @@ void checkForApiRequests()
 					client.print(F(" bytes</p>"));
 					// print all the files, use a helper to keep it clean
 					client.println(F("<h2>Files:</h2>"));
-					ListFiles(client, LS_SIZE ); //LS_SIZE | LS_DATE
+					ListFiles(&client, LS_SIZE ); //LS_SIZE | LS_DATE
+				}
+				/***************************** show clock *************************************/
+				else if (strstr(clientline, "GET /clock") != 0) {
+					// send a standard http response header
+					client.println(F("HTTP/1.1 200 OK"));
+					client.println(F("Content-Type: text/html"));
+					client.println(F("Connection: close"));
+					client.println();
+					client.print(F("<p>Time on device is:"));
+					printCurrentStringDate(&client);
+					client.print(F(" </p>"));
+					// print all the files, use a helper to keep it clean					
 				}
 				/**********************************404******************************************/
 				else {
@@ -315,13 +328,13 @@ void checkForApiRequests()
 
 /****************************List FIles***************************************/
 
-void ListFiles(EthernetClient client, uint8_t flags) {
+void ListFiles(EthernetClient *client, uint8_t flags) {
 	// This code is just copied from SdFile.cpp in the SDFat library
 	// and tweaked to print to the client output in html!
 	dir_t p;
 
 	root.rewind();
-	client.println(F("<ul>"));
+	(*client).println(F("<ul>"));
 	while (root.readDir(p) > 0) {
 		// done if past last used entry
 		if (p.name[0] == DIR_NAME_FREE) break;
@@ -333,61 +346,61 @@ void ListFiles(EthernetClient client, uint8_t flags) {
 		if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
 
 		// print any indent spaces
-		client.print(F("<li><a href=\"file/"));
+		(*client).print(F("<li><a href=\"file/"));
 		for (uint8_t i = 0; i < 11; i++) {
 			if (p.name[i] == ' ') continue;
 			if (i == 8) {
-				client.print(F("."));
+				(*client).print(F("."));
 			}
-			client.print((char)p.name[i]);
+			(*client).print((char)p.name[i]);
 		}
-		client.print(F("\">"));
+		(*client).print(F("\">"));
 
 		// print file name with possible blank fill
 		for (uint8_t i = 0; i < 11; i++) {
 			if (p.name[i] == ' ') continue;
 			if (i == 8) {
-				client.print(F("."));
+				(*client).print(F("."));
 			}
-			client.print((char)p.name[i]);
+			(*client).print((char)p.name[i]);
 		}
 
-		client.print(F("</a>"));
+		(*client).print(F("</a>"));
 
 		if (DIR_IS_SUBDIR(&p)) {
-			client.print(F("/"));
+			(*client).print(F("/"));
 		}
 
 		// print modify date/time if requested
 		if (flags & LS_DATE) {
-			client.print(FAT_YEAR(p.lastWriteDate));
-			client.print(F("-"));
+			(*client).print(FAT_YEAR(p.lastWriteDate));
+			(*client).print(F("-"));
 			printTwoDigits(client, FAT_MONTH(p.lastWriteDate));
-			client.print(F("-"));
+			(*client).print(F("-"));
 			printTwoDigits(client, FAT_DAY(p.lastWriteDate));
-			client.print(F(" "));
+			(*client).print(F(" "));
 			printTwoDigits(client, FAT_HOUR(p.lastWriteTime));
-			client.print(F(":"));
+			(*client).print(F(":"));
 			printTwoDigits(client, FAT_MINUTE(p.lastWriteTime));
-			client.print(F(":"));
+			(*client).print(F(":"));
 			printTwoDigits(client, FAT_SECOND(p.lastWriteTime));
 
 		}
 		// print size if requested
 		if (!DIR_IS_SUBDIR(&p) && (flags & LS_SIZE)) {
-			client.print(F(" "));
-			client.print(p.fileSize);
+			(*client).print(F(" "));
+			(*client).print(p.fileSize);
 		}
-		client.println(F("</li>"));
+		(*client).println(F("</li>"));
 	}
-	client.println(F("</ul>"));
+	(*client).println(F("</ul>"));
 }
 
-void printTwoDigits(EthernetClient client, uint8_t v) {
+void printTwoDigits(EthernetClient *client, uint8_t v) {
 	
-	client.print('0' + v / 10);
-	client.print('0' + v % 10);
-	client.print(0);
+	(*client).print('0' + v / 10);
+	(*client).print('0' + v % 10);
+	(*client).print(0);
 }
 
 /****************************Clock***************************************/
@@ -440,6 +453,51 @@ void printCurrentStringDate(SdFile *file)
 	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 	// retrieve data from DS3231
 	readDS3231time( &year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
+	// send it to the serial monitor
+
+	(*file).print(F("20"));
+	(*file).print(itoa(year, dateTimeConversionValue, DEC));
+	(*file).print(F("-"));
+	if (month<10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(month, dateTimeConversionValue, DEC));
+	(*file).print(F("-"));
+	if (dayOfMonth<10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(dayOfMonth, dateTimeConversionValue, DEC));
+	(*file).print(F(" "));
+	if (hour<10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(hour, dateTimeConversionValue, DEC));
+	(*file).print(F(":"));
+	if (minute<10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(minute, dateTimeConversionValue, DEC));
+	(*file).print(F(":"));
+	if (second<10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(second, dateTimeConversionValue, DEC));
+
+	//	file.print(day[dayOfWeek]);
+
+}
+
+void printCurrentStringDate(EthernetClient *file)
+{
+
+	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+	// retrieve data from DS3231
+	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
 	// send it to the serial monitor
 
 	(*file).print(F("20"));
