@@ -23,8 +23,8 @@ SPI SD CS: 4
 
 /************ ETHERNET STUFF ************/
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-byte ip[] = { 192, 168, 2, 120 };
-EthernetServer server(80);
+byte ip[] = { 192, 168, 1, 120 };
+EthernetServer server(8080);
 
 /************ SDCARD STUFF ************/
 Sd2Card card;
@@ -227,16 +227,28 @@ void checkForApiRequests()
 				/*****************************home page*****************************************/
 				if (strstr(clientline, "GET / ") != 0) {
 					// send a standard http response header
-					client.println(F("HTTP/1.1 200 OK"));
-					client.println(F("Content-Type: text/html"));
-					client.println(F("Connection: close"));
-					client.println();
-					client.println(F("<html><h2>Welcome</h2>"));
-					client.println(F("<ul>"));
-					client.println(F("<li><a href=\"files\">view list of files</a></li>"));
-					client.println(F("<li><a href=\"sensors\">current sensor values</a></li>"));
-					client.println(F("<li><a href=\"clock\">view and update app clock</a></li>"));
-					client.println(F("</ul></html>"));
+					//client.println(F("HTTP/1.1 200 OK"));
+					//client.println(F("Content-Type: text/html"));
+					//client.println(F("Connection: close"));
+					//client.println();
+					//client.println(F("<html><h2>Welcome</h2>"));
+					//client.println(F("<ul>"));
+					//client.println(F("<li><a href=\"files\">view list of files</a></li>"));
+					//client.println(F("<li><a href=\"sensors\">current sensor values</a></li>"));
+					//client.println(F("<li><a href=\"clock\">view and update app clock</a></li>"));
+					//client.println(F("</ul></html>"));
+					if (file.open(&root, "INDEX.HTML", O_READ)) {
+						client.println(F("HTTP/1.1 200 OK"));
+						client.println(F("Content-Type: text/html"));
+						client.println(F("Connection: close"));
+						client.println();
+						int16_t c;
+						while ((c = file.read()) > 0) {
+							client.print((char)c);
+						}
+						file.close();
+					}
+
 				}
 				/****************************** file content *********************************/
 				else if (strstr(clientline, "GET /file/") != 0) {
@@ -266,9 +278,9 @@ void checkForApiRequests()
 					if (strstr(filename, ".JSN") != 0){
 						client.println(F("Content-Type: application/json"));
 					}
-					else if (strstr(filename, ".HTM") != 0){
-						client.println(F("Content-Type: text/html; charset=utf-8"));
-					}
+					//else if (strstr(filename, ".HTM") != 0){
+					//	client.println(F("Content-Type: text/html; charset=utf-8"));
+					//}
 					else{
 						client.println(F("Content-Type: text/plain"));
 					}					

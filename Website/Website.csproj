@@ -27,6 +27,7 @@
     <Content Include="app\useraccount\registerSuccess.html" />
     <Content Include="app\useraccount\userhome.html" />
     <Content Include="index.htm" />
+    <Content Include="index.html" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
