@@ -21,6 +21,8 @@ SPI SD CS: 4
 #define outputLcdPin 8
 #define SDISPEED SPI_HALF_SPEED
 
+void(*resetFunc) (void) = 0;  //declare reset function @ address 0
+
 /************ ETHERNET STUFF ************/
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 byte ip[] = { 192, 168, 1, 120 };
@@ -36,6 +38,7 @@ SdFile file;
 byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 
 /************ PROGMEM STUFF *************/
+//for every boot are they writing to progmem (it has limit of 10,000 writes) 
 prog_char string_0[] PROGMEM = "0";   // "String 0" etc are strings to store - change to suit.
 prog_char string_1[] PROGMEM = "data";
 prog_char string_2[] PROGMEM = "err_";
@@ -66,7 +69,7 @@ char* sensorValue;
 char* dateTimeConversionValue;
 const char* day[] = { "NotSet!", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
-byte lastLogTime[7]; //save time of last sensor log
+byte lastLogTimeMin; //save minute of the last sensor log
 byte session[7];     //save session start time here
 byte sessionId[2];   //created session ID here
 
@@ -75,8 +78,10 @@ byte sessionId[2];   //created session ID here
 /*
    0,1,2,3,4 - admin pin
    5 - log internet traffic
+   6 - log frequency
    */
-unsigned char settings[6];
+const uint8_t settingsLength = 7;
+unsigned char settings[settingsLength];
 
 /*
 analog from  -127 to 128    ??
@@ -131,19 +136,23 @@ void setup() {
 
 void loop()
 {
+	//hopefully web request is not longer than a minute 
+	//so logger dont skip the time alloted to log the sensors
+	//since it looks for exact minute value to do the log
 	checkForApiRequests(); //check any API calls and respond 
-	LogSensors();      //log sensor input to log file
 
+	if (isTimeToLog()){ //check if minute is correct and if so - log sensor data.
+		LogSensors();      //log sensor input to log file		
+	}
 	sessionTimeStamp(); //keep session running
-	delay(3000);
-
+	delay(1000); //wait 1 sec
 }
 
 
 void SdInit(){
-	if (!card.init(SDISPEED, outputSdPin)) error(F("card.init failed!"));
-	if (!volume.init(&card)) error(F("vol.init failed!"));
-	if (!root.openRoot(&volume)) error(F("openRoot failed"));
+	if (!card.init(SDISPEED, outputSdPin)) cryticalError();
+	if (!volume.init(&card)) cryticalError();
+	if (!root.openRoot(&volume)) cryticalError();
 }
 
 void EthernetInit(){
@@ -185,23 +194,19 @@ void sessionStart(){
 				}
 				fileTo.close();
 			} //end if fileTo.open
+			else{
+				cryticalError();
+			}
 		}
 		file.close();
 	} // end if file.open
+	else{
+		cryticalError();
+	}
 	/* done copying file */
 
 	/* read setting file */
-	if (!readSettings())
-	{
-		//default values:
-		settings[0] = 1;
-		settings[1] = 2;
-		settings[2] = 3;
-		settings[3] = 4;
-		settings[4] = 5;//admin pass
-		settings[5] = 1; //log internet traffic
-		saveSettings();
-	}
+	readSettings();
 }
 
 /* constantly write to session file */
@@ -219,26 +224,41 @@ void sessionTimeStamp(){
 			file.print(F("\"EndedTime\":\""));
 			printCurrentStringDateToFile(&file, true); //print current time
 			file.print(F("\" }                            ")); //space to delete trailing chars from previous session
-			file.close();
+			
 		}
+		file.close();
+	}
+	else{
+		cryticalError();
 	}
 }
 
-/* montly log writes every 10 mins */
-bool isTimeToLogMinuteLog()
+/* log timer allows writting every X mins */
+bool isTimeToLog()
 {
-	//log every 'min' minutes!
-	byte min = 10; // 6/h, 144/d, 4320/month
-	byte min = 30; // 2/h, 48/d,  1488/month
-	byte min = 60; // 1/h, 24/d,  744/month
+	byte min;
+
+	if (settings[6] == '0'){ min = 10; }     //log lines: 6/h, 144/d, 4320/month
+	else if (settings[6] == '1'){ min = 30; }//log lines: 2/h, 48/d,  1488/month
+	else if (settings[6] == '2'){ min = 60; }//log lines: 1/h, 24/d,  744/month
+	else { min = 60; } //default
 	/* get current date: */
 	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
 	/* last log date is inside lastLogTime */
-	
-
-
+	if (
+		(minute % min == 0) &&       //is time to log!
+		(minute != lastLogTimeMin)   //make sure we did not log this time already
+		)
+	{
+		lastLogTimeMin = minute;   //mark as logged
+		return true;
+	}
+	else{
+		return false;
+	}
 
 }
+
 /*################# SETTINGS ####################################**/
 bool readSettings(){
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[7]))); //'settings.txt
@@ -247,7 +267,7 @@ bool readSettings(){
 			int16_t c;
 			int i = 0;
 			while ((c = file.read()) > 0) {
-				if (i < 6){
+				if (i < settingsLength){
 					settings[i] = c;
 				}
 				i++;
@@ -255,6 +275,18 @@ bool readSettings(){
 		}
 		file.close();
 		return true;
+	}
+	else{
+		//default values:
+		settings[0] = 1;
+		settings[1] = 2;
+		settings[2] = 3;
+		settings[3] = 4;
+		settings[4] = 5;//admin pass
+		settings[5] = 1; //log internet traffic
+		settings[6] = 60; //log frequency in minutes
+		saveSettings();
+	
 	}
 	return false;
 }
@@ -265,12 +297,15 @@ void saveSettings(){
 	if (file.open(&root, logFileName, O_CREAT | O_WRITE)) {
 		if (file.isFile()){
 			int i = 0;
-			while (i < 6) {
+			while (i < settingsLength) {
 				file.print(settings[i]);
 				i++;
 			}			
 		}
 		file.close();
+	}
+	else{
+		cryticalError();
 	}
 
 }
@@ -291,48 +326,44 @@ sensorValue*
 void LogSensors()
 {
 
-	/******************/
-	//check for right time to log sensors!
-	//otherwise skip
-	//return;
-
 	//AnalogPins: 0,1,2,3 (4 & 5 are reserved for I2C so no need to log it)
 	const uint8_t numOfPins = 4;
 	int sensor = 0;  //int8_t not right
 
-	file.open(root, getCurrentLogFileName(), O_CREAT | O_APPEND | O_WRITE);    //Open or create the file
-	if (file.isFile()){
+	if (file.open(root, getCurrentLogFileName(), O_CREAT | O_APPEND | O_WRITE))//Open or create the file
+	{
+		if (file.isFile()){
 
-		file.print(F("{ \"datetime\":\""));
-		printCurrentStringDateToFile(&file, true);
-		file.print(F("\", "));
+			file.print(F("{ \"datetime\":\""));
+			printCurrentStringDateToFile(&file, true);
+			file.print(F("\", "));
 
-		file.print(F(" \"lastboot\":\""));
-		printCurrentStringDateToFile(&file, false);
-		file.print(F("\", "));
+			file.print(F(" \"lastboot\":\""));
+			printCurrentStringDateToFile(&file, false);
+			file.print(F("\", "));
 
-		file.print(F(" \"freeRamInBytes\":\""));
-		file.print(FreeRam());
-		file.print(F("\", "));
+			file.print(F(" \"freeRamInBytes\":\""));
+			file.print(FreeRam());
+			file.print(F("\", "));
 
-		for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
-			sensor = analogRead(analogPin);
-			file.print(F("\"AnalogPin"));
-			file.print(itoa(analogPin, sensorValue, 10));
-			file.print(F("\": \""));
-			file.print(itoa(sensor, sensorValue, 10));
-			file.print(F("\""));
-			if (analogPin < (numOfPins - 1)) {
-				file.print(F(","));
+			for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
+				sensor = analogRead(analogPin);
+				file.print(F("\"AnalogPin"));
+				file.print(itoa(analogPin, sensorValue, 10));
+				file.print(F("\": \""));
+				file.print(itoa(sensor, sensorValue, 10));
+				file.print(F("\""));
+				if (analogPin < (numOfPins - 1)) {
+					file.print(F(","));
+				}
 			}
+			file.print(F("}"));
+			file.println();			
 		}
-		file.print(F("}"));
-		file.println();
-
 		file.close();
 	}
 	else{
-		error(F("error opening log file"));
+		cryticalError();
 	}
 }
 
@@ -371,7 +402,7 @@ void checkForApiRequests()
 				clientline[index] = 0;
 
 				// If settings want us to log http traffic:
-				if (settings[5] == 1)
+				if (settings[5] == '1')
 					logHttp(clientline);
 
 				// Look for substring such as a request to get the root file
@@ -394,6 +425,7 @@ void checkForApiRequests()
 						client.println(F("Connection: close"));
 						client.println();
 						client.println(F("<html><h2>index.htm not Found!</h2></html>"));
+						cryticalError(); ///!!!!!!!!!!!!
 						break;
 					}
 
@@ -753,19 +785,24 @@ void logInit(){
 }
 
 void error(char* line){
-	//Serial.print(F("Error:"));
+
+
 	//Serial.println(line);
-
-	//SdFile file;
-	//file.open(root, getCurrentErrorFileName(), O_CREAT | O_APPEND | O_WRITE);    //Open or create the file
-	//if (file.isFile()){
-
-	//	file.print(F("{ \"date\": "));
-	//	file.print(getCurrentStringDate(false));
-	//	file.print(F("\", \"Error\": "));
-	//	file.print(line);
-	//	file.println(F("\" }"));
+	//strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
+	//if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
+	//	if (file.isFile()){
+	//		file.print(F("{ \"Error\":\""));
+	//		file.print(line);
+	//		file.print(F("\", "));
+	//		file.print(F("\"datetime\":\""));
+	//		file.print(getCurrentErrorFileName());
+	//		file.print(F("\" }"));
+	//		file.println();
+	//	}
 	//	file.close();
+	//}
+	//else{
+	//	cryticalError();
 	//}
 }
 
@@ -837,5 +874,11 @@ void log(char* line){
 		}
 		file.close();
 	}
+}
+
+void cryticalError(){
+
+
+	resetFunc();  //call reset
 }
 /**************************************************************************/
