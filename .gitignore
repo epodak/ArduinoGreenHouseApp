@@ -2,3 +2,6 @@ Debug/
 GreenHouseApp.opensdf
 /GreenHouseApp.sdf
 Visual Micro/
+exclude/
+Website/bin/
+Website/obj/
