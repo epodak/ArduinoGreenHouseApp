@@ -12,9 +12,11 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css" />
 
   <style type="text/css">
-    body {
-      min-height: 2000px;
-      padding-top: 70px;
+    /*body {
+      padding-top: 80px;
+    }*/
+    ul>li>a.navlink {
+      padding:7px;
     }
 
     .green {
@@ -24,6 +26,7 @@
     .yellow {
       color: yellow;
     }
+
     .red {
       color: #a94442;
     }
@@ -35,7 +38,7 @@
 
     <div data-ng-include="'header.html'"></div>
 
-    <div class="container body-content ui-view-container" role="main">
+    <div class="container body-content ui-view-container" role="main" style="margin-bottom:50px;">
       <div ng-view data-ng-view-animate="zoomIn"></div>
     </div>
 
@@ -58,37 +61,41 @@
 
 
   <script type="text/ng-template" id="header.html">
-    <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-default text-center">
       <div class="container">
 
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar123" aria-expanded="false" aria-controls="navbar">
+        <div class="navbar-header text-center">
+          <!--<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar123" aria-expanded="false" aria-controls="navbar">
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#"><i class="fa fa-leaf green"></i> Green House</a>
+          </button>-->
+          <a class="navbar-brand" href="/#/"><i class="fa fa-leaf green"></i> Green House</a>
         </div>
 
 
-        <div id="navbar123" class="navbar-collapse collapse" aria-expanded="false" style="height: 1px;">
-          <ul class="nav navbar-nav">
-            <li data-toggle="tooltip" data-placement="bottom" title="time since last reboot"><a href="#"><i class="fa fa-heartbeat green"></i> <span>4 days</span></a></li>
-            <li data-toggle="tooltip" data-placement="bottom" title="Free RAM 417b"><a href="#"><i class="fa fa-tachometer green"></i> <span>Ok</span></a></li>
-            <li data-toggle="tooltip" data-placement="bottom" title="click to refresh"><a href="#"><i class="fa fa-refresh green"></i> <span>2015 May 22 13:32:15</span></a></li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li>
-              <a href="#" >
-                <div class="btn-group" role="group">
-                  <span type="button" class="btn btn-primary active">C&deg;</span>
-                  <span type="button" class="btn btn-default">F&deg;</span>
-                </div>
-              </a>
-            </li>
-           </ul>
-          </div> <!-- /.navbar-collapse -->
+        <!--<div id="navbar123" class="navbar-collapse collapse" aria-expanded="false" style="height: 1px;">-->
+        <ul class="nav navbar-nav">
+          <li title="Click to refresh new data">
+            <a href="#" class="navlink">
+              <i class="fa fa-refresh fa-lg green" style="position:relative;top:10px; "></i>
+              <span>2015 May 22 13:32:15</span><br />
+              <small style="margin-left:20px;">Click to refresh new data</small>
+            </a>
+          </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li>
+            <a href="#" class="navlink">
+              <div class="btn-group" role="group">
+                <span type="button" class="btn btn-primary active">C&deg;</span>
+                <span type="button" class="btn btn-default">F&deg;</span>
+              </div>
+            </a>
+          </li>
+        </ul>
+        <!--</div>  /.navbar-collapse -->
 
       </div>   <!-- /.container-fluid -->
     </nav>
@@ -98,11 +105,11 @@
 
     <footer class="navbar navbar-default navbar-fixed-bottom text-center">
       <div class="container">
-        <ul class="nav navbar-nav animated fadeIn">
-          <li><a target="_blank" href="https://github.com/miticv/ArduinoGreenHouseApp">&copy; 2015 - Arduino Green House App <i class="fa fa-external-link"></i></a></li>          
-        </ul>
+        <!--<ul class="nav navbar-nav animated fadeIn">
+          <li><a target="_blank" href="https://github.com/miticv/ArduinoGreenHouseApp">&copy; 2015 - Arduino Green House App <i class="fa fa-external-link"></i></a></li>
+        </ul>-->
         <ul class="nav navbar-nav navbar-right">
-          <li><a ng-hide="layout.isLoggedIn" href="/admin"><i class="fa fa-wrench"></i> admin</a></li>
+          <li><a ng-hide="layout.isLoggedIn" href="/#/admin"><i class="fa fa-wrench"></i> admin</a></li>
         </ul>
       </div>
     </footer>
@@ -110,67 +117,163 @@
 
   <script type="text/ng-template" id="home.html">
 
-    <div class="panel panel-default">
-      <div class="panel-heading"><i class="fa fa-cloud"></i> Air</div>
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-sm-6">
-            <ul class="list-group">
-              <a href="#" class="list-group-item active">
-                <i class="fa fa-cloud-download"></i> Air Inside
-              </a>
-              <li class="list-group-item  list-group-item-warning"><span class="badge">10 C&deg;</span> Temperature</li>
-              <li class="list-group-item  list-group-item-success"><i class="fa fa-tint"></i><span class="badge">80 &#37;</span> Humidity</li>
-              <li class="list-group-item  list-group-item-warning"><i class="fa fa-fire"></i><span class="badge">32 </span> Heat Index</li>
-              <li class="list-group-item  list-group-item-success"><i class="fa fa-sun-o"></i><span class="badge">780 lux</span> Light</li>
-            </ul>
-          </div><!-- /.col-sm-6 -->
-          <div class="col-sm-6">
-            <ul class="list-group">
-              <a href="#" class="list-group-item active">
-                <i class="fa fa-cloud-upload"></i> Air Outside <i class="fa fa-exclamation-triangle red"></i>
-              </a>
-              <li class="list-group-item  list-group-item-danger"><span class="badge">-18 C&deg;</span> Temperature</li>
-              <li class="list-group-item  list-group-item-success"><i class="fa fa-tint"></i><span class="badge">20 &#37;</span> Humidity</li>
-              <li class="list-group-item  list-group-item-warning"><i class="fa fa-fire"></i><span class="badge">5 </span> Heat Index</li>
-              <li class="list-group-item  list-group-item-success"><i class="fa fa-sun-o"></i><span class="badge">830 lux</span> Light</li>
-            </ul>
-          </div><!-- /.col-sm-6 -->
-        </div>
+    <div class="row">
+      <div class="col-sm-12">
+        <table class="table">
+          <caption>System statistics</caption>
+          <tbody>
+            <tr class="success">
+              <td><i class="fa fa-heartbeat green"></i> System running for <span>4 days</span> since last reboot </td>
+              <td><i class="fa fa-tachometer green"></i> System is healthy with <span>417</span>b or Free RAM</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <div class="panel panel-default">
-      <div class="panel-heading"><i class="fa fa-cloud"></i> Pool</div>
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-sm-6">
-            <div class="list-group">
-              <a href="#" class="list-group-item active">
-                Pool Water
-              </a>
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-arrows-v"></i> <span class="badge">5 m</span> Level</a>              
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-long-arrow-up"></i><span class="badge">12 C&deg;</span> Temperature top</a>
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-long-arrow-down"></i><span class="badge">10 C&deg;</span> Temperature bottom </a>
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-plug"></i><i class="fa fa-cog fa-spin fa-2x green pull-right"></i> Pump Running</a>
-            </div>
-          </div><!-- /.col-sm-6 -->
-          <div class="col-sm-6">
-            <div class="list-group">
-              <a href="#" class="list-group-item active">
-                Water Beds
-              </a>
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-arrows-v"></i> <span class="badge">5 m</span> Bed A </a>
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-long-arrow-up"></i><span class="badge">12 C&deg;</span>Bed B </a>
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-long-arrow-down"></i><span class="badge">10 C&deg;</span>Bed C  </a>
-              <a href="#" class="list-group-item list-group-item-success"><i class="fa fa-plug"></i><i class="fa fa-cog fa-spin fa-2x green pull-right"></i>Bed C </a>
-            </div>
-          </div><!-- /.col-sm-6 -->
-        </div>
+    <div class="row">
+      <div class="col-sm-6 table-responsive">
+        <table class="table">
+          <caption>Air statistics</caption>
+          <thead>
+            <tr class="bg-primary"><td>Air</td><td> Out</td><td>In</td></tr>
+          </thead>
+          <tbody>
+            <tr class="success"><td>Temperature</td><td><span class="badge">10 C&deg;</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+            <tr class="success"><td>Humidity</td><td> <span class="badge">80 &#37;</span></td><td><span class="badge">80 &#37;</span></td></tr>
+            <tr class="success"><td>Heat Index</td><td> <span class="badge">32 </span></td><td><span class="badge">32 </span></td></tr>
+            <tr class="success"><td>Light</td><td> <span class="badge">780 lux</span></td><td><span class="badge">780 lux</span></td></tr>
+          </tbody>
+        </table>
+      </div><!-- /.col-sm-6 -->
+      <div class="col-sm-6  table-responsive">
+        <table class="table">
+          <caption>Water Statistics</caption>
+          <thead>
+            <tr class="bg-primary"><td>Water</td><td></td></tr>
+          </thead>
+          <tbody>
+            <tr class="success"><td>Pool Level</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Top Temperature</td><td><span class="badge">12 C&deg;</span></td></tr>
+            <tr class="success"><td>Bottom Temperature</td><td><span class="badge">12 C&deg; </span></td></tr>
+            <tr class="success"><td>Pump Running</td><td><i class="fa fa-cog fa-spin fa-lg green"></i></td></tr>
+          </tbody>
+        </table>
+
+      </div><!-- /.col-sm-6 -->
+    </div><!--/row-->
+
+    <div class="row">
+      <div class="col-sm-6 table-responsive">
+        <table class="table">
+          <caption>Bed statistics</caption>
+          <thead>
+            <tr class="bg-primary"><td>Bed</td><td> Level</td><td></td></tr>
+          </thead>
+          <tbody>
+            <tr class="success"><td>BED A</td><td><span class="badge">1</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+            <tr class="success"><td>BED B</td><td><span class="badge">1</span></td><td><span class="badge">80 &#37;</span></td></tr>
+            <tr class="success"><td>BED C</td><td><span class="badge">1 </span></td><td><span class="badge">32 </span></td></tr>
+            <tr class="success"><td>BED D</td><td><span class="badge">1</span></td><td><span class="badge">780 lux</span></td></tr>
+            <tr class="success"><td>BED A</td><td><span class="badge">2</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+            <tr class="success"><td>BED B</td><td><span class="badge">2</span></td><td><span class="badge">80 &#37;</span></td></tr>
+            <tr class="success"><td>BED C</td><td><span class="badge">2</span></td><td><span class="badge">32 </span></td></tr>
+            <tr class="success"><td>BED D</td><td><span class="badge">2</span></td><td><span class="badge">780 lux</span></td></tr>
+          </tbody>
+        </table>
+      </div><!-- /.col-sm-6 -->
+      <div class="col-sm-6  table-responsive">
+        <table class="table">
+          <caption>Tower Statistics</caption>
+          <thead>
+            <tr class="bg-primary"><td>Tower</td><td></td></tr>
+          </thead>
+          <tbody>
+            <tr class="success"><td>Tower 1</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Tower 2</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Tower 3</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Tower 4</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Tower 5</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Tower 6</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Tower 7</td><td><span class="badge">5 m</span></td></tr>
+            <tr class="success"><td>Tower 8</td><td><span class="badge">5 m</span></td></tr>
+
+          </tbody>
+        </table>
+
+      </div><!-- /.col-sm-6 -->
+    </div><!--/row-->
+
+  </script>
+
+  <script type="text/ng-template" id="admin.html">
+
+    <div class="row">
+      <div class="col-sm-12">
+        <table class="table">
+          <caption>System statistics</caption>
+          <tbody>
+            <tr class="success">
+              <td><i class="fa fa-heartbeat green"></i> System running for <span>4 days</span> since last reboot </td>
+              <td><i class="fa fa-tachometer green"></i> System is healthy with <span>417</span>b or Free RAM</td>
+              <td>total count device booted</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-12">
+        <table class="table">
+          <caption> Update Device Time</caption>
+          <tbody>
+            <tr class="success">
+              <td><i class="fa fa-heartbeat green"></i> Update Device Time READY</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-12">
+        <table class="table">
+          <caption> Change Settings</caption>
+          <tbody>
+            <tr class="success">
+              <td><i class="fa fa-tachometer green"></i> Change Admin Password READY</td>
+              <td><i class="fa fa-tachometer green"></i> Log http request in log file (Y N) READY</td>
+              <td><i class="fa fa-tachometer green"></i> Log Ram usage in log file (Y N) READY</td>
+              <td><i class="fa fa-tachometer green"></i> Set Sensor log frequency (10-0, 30-1, 60-2 min) READY</td>
+              <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
+              <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
+              <td><i class="fa fa-tachometer green"></i> Send Email</td>
+              <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
+              <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-12">
+        <table class="table">
+          <caption> Maintenance</caption>
+          <tbody>
+            <tr class="success">
+              <td><i class="fa fa-tachometer green"></i> View files (Links)</td>
+              <td><i class="fa fa-tachometer green"></i> View sessions</td>
+              <td><i class="fa fa-tachometer green"></i> Reboot</td>             
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
   </script>
+
 
 
   <script>
@@ -186,7 +289,7 @@
       service("greenApiService", ['$http', '$q', function ($http, $q) {
 
         return ({
-          
+
           getSensorData: getSensorData,
           getHistoryLog: getHistoryLog,
           getMonthData: getMonthData,
@@ -209,7 +312,7 @@
           //  }
           //});
           //return (request.then(handleSuccess, handleError));
-          return {  "Datetime":"2015-02-13 01:22:14", "AnalogSignal1":"5", "AnalogSignal2":"10", "AnalogSignal3":"11" };
+          return { "Datetime": "2015-02-13 01:22:14", "AnalogSignal1": "5", "AnalogSignal2": "10", "AnalogSignal3": "11" };
         }
 
         function getHistoryLog() {
@@ -344,7 +447,7 @@
         function handleSuccess(response) {
           return (response.data);
         }
-    }]);
+      }]);
 
 
     angular.module('greenhouse').
@@ -367,7 +470,7 @@
   <script>
     $(document).ready(function () {
       angular.bootstrap(document, ['greenhouse']);
-      $('[data-toggle="tooltip"]').tooltip();
+      //$('[data-toggle="tooltip"]').tooltip();
     });
   </script>
 

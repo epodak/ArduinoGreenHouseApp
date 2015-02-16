@@ -11,7 +11,8 @@ SPI SD CS: 4
 #include <Ethernet.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <avr/pgmspace.h>
+#include <avr/pgmspace.h> //flash, fast, 10,000x 
+#include <avr/eeprom.h>   //slow (3ms) [therefore use it only for startup variables], 100,000x 
 
 /* ################# Hardware Settings ############################ */
 /* address for clock on I2C bus */
@@ -38,16 +39,16 @@ SdFile file;
 byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 
 /************ PROGMEM STUFF *************/
-//for every boot are they writing to progmem (it has limit of 10,000 writes) 
-prog_char string_0[] PROGMEM = "0";   // "String 0" etc are strings to store - change to suit.
-prog_char string_1[] PROGMEM = "data";
-prog_char string_2[] PROGMEM = "err_";
-prog_char string_3[] PROGMEM = ".jsn";
-prog_char string_4[] PROGMEM = ".err";
-prog_char string_5[] PROGMEM = "session.txt";
-prog_char string_6[] PROGMEM = "log.txt";
-prog_char string_7[] PROGMEM = "settings.txt";
-
+//for every copy of the program to the device it is writing to flash memmory (progmem) 
+//therefore after we wrote this data once, we only reference it afterwards (thats why is commented)
+const prog_char string_0[] PROGMEM = "0";   // "String 0" etc are strings to store - change to suit.
+const prog_char string_1[] PROGMEM = "data";
+const prog_char string_2[] PROGMEM = "err_";
+const prog_char string_3[] PROGMEM = ".jsn";
+const prog_char string_4[] PROGMEM = ".err";
+const prog_char string_5[] PROGMEM = "session.txt";
+const prog_char string_6[] PROGMEM = "log.txt";
+const prog_char string_7[] PROGMEM = "settings.txt";
 PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 {
 	string_0,
@@ -73,15 +74,18 @@ byte lastLogTimeMin; //save minute of the last sensor log
 byte session[7];     //save session start time here
 byte sessionId[2];   //created session ID here
 
+int minMaxRam[2]; //track max and min amout or ram used in program
 
 
 /*
    0,1,2,3,4 - admin pin
    5 - log internet traffic
    6 - log frequency
+   7 - log Ram Usage
    */
-const uint8_t settingsLength = 7;
+const uint8_t settingsLength = 8;
 unsigned char settings[settingsLength];
+
 
 /*
 analog from  -127 to 128    ??
@@ -95,8 +99,9 @@ digital from  0   to 1      ??
 /* on API web client call, how much of the web request string we need to know how to respond: (GET /... )
    should be the length of the largest api call (+1 for string end char \0):
    GET /file/12345678.123 or
-   PUT /date?y=15&M=2&d=15&h=23&m=55&s=15&w=2  */
-#define BUFSIZ 60
+   PUT /date or
+   A=pass1&y=15&M=12&d=15&h=23&m=55&s=15&w=2  */
+#define BUFSIZ 30
 /* Our web server will timeout in this many ms */
 //#define TIMEOUTMS 2000
 
@@ -131,8 +136,10 @@ void setup() {
 	EthernetInit();
 
 	sessionStart();
-}
 
+	initRamUsage(); //will set start amout of ram usage - min most likely
+
+}
 
 void loop()
 {
@@ -145,9 +152,9 @@ void loop()
 		LogSensors();      //log sensor input to log file		
 	}
 	sessionTimeStamp(); //keep session running
+	logRamUsage();
 	delay(1000); //wait 1 sec
 }
-
 
 void SdInit(){
 	if (!card.init(SDISPEED, outputSdPin)) cryticalError();
@@ -160,12 +167,31 @@ void EthernetInit(){
 	server.begin();
 }
 
+/*######################## RAM LOGING ##################################*/
+
+void initRamUsage()
+{
+	minMaxRam[0] = FreeRam();
+	minMaxRam[1] = FreeRam();
+}
+
+void logRamUsage()
+{
+	if (settings[7] == 0) return;
+	if (FreeRam() > minMaxRam[1]) {
+		minMaxRam[1] = FreeRam();
+	}
+	if (FreeRam() < minMaxRam[0]) {
+		minMaxRam[0] = FreeRam();
+	}
+}
+
 /*##################### SESSION #########################################*/
 
 void sessionStart(){
 
 	/* save curent date / time*/
-	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);	
+	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
 	session[0] = year;
 	session[1] = month;
 	session[2] = dayOfMonth;
@@ -187,6 +213,7 @@ void sessionStart(){
 			if (fileTo.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
 				if (fileTo.isFile()){
 					int16_t c;
+					logRamUsage();
 					while ((c = file.read()) > 0) {
 						fileTo.print((char)c);
 					}
@@ -224,7 +251,7 @@ void sessionTimeStamp(){
 			file.print(F("\"EndedTime\":\""));
 			printCurrentStringDateToFile(&file, true); //print current time
 			file.print(F("\" }                            ")); //space to delete trailing chars from previous session
-			
+
 		}
 		file.close();
 	}
@@ -266,6 +293,7 @@ bool readSettings(){
 		if (file.isFile()){
 			int16_t c;
 			int i = 0;
+			logRamUsage();
 			while ((c = file.read()) > 0) {
 				if (i < settingsLength){
 					settings[i] = c;
@@ -278,15 +306,16 @@ bool readSettings(){
 	}
 	else{
 		//default values:
-		settings[0] = 1;
-		settings[1] = 2;
-		settings[2] = 3;
-		settings[3] = 4;
-		settings[4] = 5;//admin pass
-		settings[5] = 1; //log internet traffic
-		settings[6] = 60; //log frequency in minutes
+		settings[0] = '1';
+		settings[1] = '2';
+		settings[2] = '3';
+		settings[3] = '4';
+		settings[4] = '5';//admin pass
+		settings[5] = '1'; //log internet traffic
+		settings[6] = '1'; //log frequency in minutes ( 0=10min, 1=30min, 2=60min)
+		settings[7] = '1'; //keep log of free ram per session
 		saveSettings();
-	
+
 	}
 	return false;
 }
@@ -297,17 +326,33 @@ void saveSettings(){
 	if (file.open(&root, logFileName, O_CREAT | O_WRITE)) {
 		if (file.isFile()){
 			int i = 0;
+			logRamUsage();
 			while (i < settingsLength) {
-				file.print(settings[i]);
+				file.write(settings[i]);
 				i++;
-			}			
+			}
 		}
+		file.print("                      ");
 		file.close();
 	}
 	else{
 		cryticalError();
 	}
 
+}
+
+bool isPassCorrect(char *pass)
+{
+	if (
+		settings[0] == pass[0] &&
+		settings[1] == pass[1] &&
+		settings[2] == pass[2] &&
+		settings[3] == pass[3] &&
+		settings[4] == pass[4]
+		)
+		return true;
+	else
+		return false;
 }
 
 /*################# LOG SENSORS ####################################**/
@@ -338,13 +383,18 @@ void LogSensors()
 			printCurrentStringDateToFile(&file, true);
 			file.print(F("\", "));
 
-			file.print(F(" \"lastboot\":\""));
-			printCurrentStringDateToFile(&file, false);
+			file.print(F(" \"Id\":\""));
+			file.print(sessionId[0], DEC);
+			file.print(sessionId[1], DEC);
 			file.print(F("\", "));
 
-			file.print(F(" \"freeRamInBytes\":\""));
-			file.print(FreeRam());
-			file.print(F("\", "));
+			//file.print(F(" \"lastboot\":\""));
+			//printCurrentStringDateToFile(&file, false);
+			//file.print(F("\", "));
+
+			//file.print(F(" \"freeRamInBytes\":\""));
+			//file.print(FreeRam());
+			//file.print(F("\", "));
 
 			for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
 				sensor = analogRead(analogPin);
@@ -356,9 +406,10 @@ void LogSensors()
 				if (analogPin < (numOfPins - 1)) {
 					file.print(F(","));
 				}
+				logRamUsage();
 			}
 			file.print(F("}"));
-			file.println();			
+			file.println();
 		}
 		file.close();
 	}
@@ -368,7 +419,6 @@ void LogSensors()
 }
 
 /*################# API ####################################**/
-
 /*
 char clientline[BUFSIZ];
 uint8_t index
@@ -378,129 +428,59 @@ EthernetClient client
 void checkForApiRequests()
 {
 	char clientline[BUFSIZ];
-	uint8_t index = 0;
+	char putargs[BUFSIZ];
 
 	EthernetClient client = server.available();
 	if (client) {
-		index = 0;		// reset the input buffer
-
 		while (client.connected()) {
 			if (client.available()) {
-				char c = client.read();
 
-				// If it isn't a new line, add the character to the buffer
-				if (c != '\n' && c != '\r') {
-					clientline[index] = c;
-					index++;
-					// are we too big for the buffer? start tossing out data
-					if (index >= BUFSIZ) index = BUFSIZ - 1;
-					// continue to read more data!
-					continue; //restart while
-				}
-
-				// got a \n or \r new line, which means the string is done
-				clientline[index] = 0;
+				ApiRequest_GetRequestDetails(&client, clientline, putargs);
 
 				// If settings want us to log http traffic:
-				if (settings[5] == '1')
-					logHttp(clientline);
+				if (settings[5] == '1') {				
+					logHttp(clientline, putargs);
+				}				
 
-				// Look for substring such as a request to get the root file
 				/*****************************home page*****************************************/
-				if (strstr(clientline, "GET / ") != 0) {
-					if (file.open(&root, "INDEX.HTM", O_READ)) {
-						client.println(F("HTTP/1.1 200 OK"));
-						client.println(F("Content-Type: text/html"));
-						client.println(F("Connection: close"));
-						client.println();
-						int16_t c;
-						while ((c = file.read()) > 0) {
-							client.print((char)c);
-						}
-						file.close();
-					}
-					else{
-						client.println(F("HTTP/1.1 404 Not Found"));
-						client.println(F("Content-Type: text/html"));
-						client.println(F("Connection: close"));
-						client.println();
-						client.println(F("<html><h2>index.htm not Found!</h2></html>"));
-						cryticalError(); ///!!!!!!!!!!!!
-						break;
-					}
-
+				if (strstr(clientline, "GET / ") != 0) {	
+					ApiRequest_GetHomePage(&client);
 				}
 				/****************************** file content *********************************/
 				else if (strstr(clientline, "GET /file/") != 0) {
-					// this time no space after the /, so a sub-file!
-					char *filename;
-
-					//Next 2 lines create pointer of sub string for filename and trims clientline
-					filename = clientline + 10; // look after the "GET /file/" (10 chars)
-					// a little trick, look for the " HTTP/1.1" string and 
-					// turn the first character of the substring into a 0 to clear it out.
-					(strstr(clientline, " HTTP"))[0] = 0;
-
-					if (!file.open(&root, filename, O_READ)) {
-						client.println(F("HTTP/1.1 404 Not Found"));
-						client.println(F("Content-Type: text/html"));
-						client.println(F("Connection: close"));
-						client.println();
-						client.println(F("<h2>File Not Found!</h2>"));
-						break;
-					}
-
-					client.println(F("HTTP/1.1 200 OK"));
-					//dynamically asign content type by file extension?
-					if (strstr(filename, ".JSN") != 0){
-						client.println(F("Content-Type: application/json"));
-					}
-					//else if (strstr(filename, ".HTM") != 0){
-					//	client.println(F("Content-Type: text/html; charset=utf-8"));
-					//}
-					else{
-						client.println(F("Content-Type: text/plain"));
-					}
-					client.println(F("Connection: close"));
-					client.println();
-
-					int16_t c;
-					while ((c = file.read()) > 0) {
-						client.print((char)c);
-					}
-					file.close();
+					ApiRequest_GetIndividualFile(&client, clientline + 10);
 				}
 				/***************************** list files *************************************/
 				else if (strstr(clientline, "GET /files") != 0) {
-					// send a standard http response header
-					client.println(F("HTTP/1.1 200 OK"));
-					client.println(F("Content-Type: text/html"));
-					client.println(F("Connection: close"));
-					client.println();
+					ApiRequest_GetSuccessHeader(&client, false);
 					// print all the files, use a helper to keep it clean
 					client.println(F("<h2>Files:</h2>"));
 					ListFiles(&client, LS_SIZE); //LS_SIZE | LS_DATE
 				}
 				/***************************** show clock *************************************/
 				else if (strstr(clientline, "GET /clock") != 0) {
-					// send a standard http response header
-					client.println(F("HTTP/1.1 200 OK"));
-					client.println(F("Content-Type: text/html"));
-					client.println(F("Connection: close"));
-					client.println();
-					client.print(F("<p>Time on device is:"));
-					printCurrentStringDate(&client);
-					client.print(F(" </p>"));
-					// print all the files, use a helper to keep it clean					
+					ApiRequest_GetDateTime(&client);
 				}
+				/***************************** show ram *************************************/
+				else if (strstr(clientline, "GET /freeram") != 0) {
+					ApiRequest_GetRam(&client);
+				}
+				/***************************** update settings *************************************/
+				else if (strstr(clientline, "PUT /settings") != 0) {
+					ApiRequest_PutSettings(&client, putargs);
+				}
+				/***************************** update clock *************************************/
+				else if (strstr(clientline, "PUT /clock") != 0) {
+					ApiRequest_PutDateTime(&client, putargs);
+				}
+				/***************************** update clock *************************************/
+				else if (strstr(clientline, "PUT /reboot") != 0) {
+					ApiRequest_PutReboot(&client, putargs);
+				}
+
 				/**********************************404******************************************/
 				else {
-					// everything else is a 404
-					client.println(F("HTTP/1.1 404 Not Found"));
-					client.println(F("Content-Type: text/html"));
-					client.println(F("Connection: close"));
-					client.println();
-					client.println(F("<h2>File Not Found!</h2>"));
+					ApiRequest_GetErrorScreen(&client, true, false);
 				}
 				break;
 			}
@@ -508,6 +488,242 @@ void checkForApiRequests()
 		// give the web browser time to receive the data		
 		delay(1);
 		client.stop();
+	}
+
+}
+
+void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* params)
+{
+	uint8_t index = 0;
+	uint8_t indexargs = 0;
+	bool parametersFound = false;
+	int c = (*client).read();
+	params[0] = c;
+	while (c > -1){
+		// If it isn't a new line, add the character to the buffer
+		if (c != '\n' && c != '\r') {
+			/*---- find request ----------------------*/
+			if (index  < BUFSIZ)
+			{
+				request[index] = c; //read first line
+				index++;
+			}
+			/*---- find post or put arguments --------*/
+			if (!parametersFound){ //look for A=
+				params[0] = params[1];
+				params[1] = c;
+				if (params[0] == 'A' && params[1] == '='){
+					parametersFound = true;
+					indexargs=2;
+				}
+			}
+			else{
+				if (indexargs < BUFSIZ){					
+					params[indexargs] = c;
+					indexargs++;
+				}
+			}
+			/*-----------------------------------------*/
+			//continue; //restart while
+		}
+		else{
+			if (index > 3 && index < BUFSIZ) {
+				request[index] = 0;
+				index = BUFSIZ + 1;
+			}
+			if (indexargs > 3 && indexargs < BUFSIZ) {
+				params[indexargs] = 0;
+				indexargs = BUFSIZ + 1;
+			}			
+		}
+		logRamUsage();
+		c = (*client).read();
+	}//end while
+	//folowing just prevents any bug if request line is very long 
+	//so we did not have chance to break the line yet:
+	params[BUFSIZ-1] = 0;
+	params[BUFSIZ-1] = 0;
+}
+
+void ApiRequest_GetSuccessHeader(EthernetClient *client, bool isJson)
+{
+	(*client).println(F("HTTP/1.1 200 OK"));
+	if (isJson)
+		(*client).println(F("Content-Type: application/json"));
+	else
+		(*client).println(F("Content-Type: text/html"));
+	(*client).println(F("Connection: close"));
+	(*client).println();
+}
+
+void ApiRequest_GetErrorScreen(EthernetClient *client, bool is404, bool isJson)
+{
+	if (is404){
+		(*client).println(F("HTTP/1.1 404 Not Found"));
+	}
+	else{
+		(*client).println(F("HTTP/1.1 401 Access Denied"));
+	}
+
+	if (isJson)
+		(*client).println(F("Content-Type: application/json"));
+	else
+		(*client).println(F("Content-Type: text/html"));
+
+	(*client).println(F("Connection: close"));
+	(*client).println();
+	if (is404){
+		if (isJson)
+			(*client).println(F("{ \"error\":\"404 - File Not Found\" }"));
+		else
+			(*client).println(F("<h2>File Not Found!</h2>"));
+	}
+	else{
+		if (isJson)
+			(*client).println(F("{ \"error\":\"401 - Access Denied\" }"));
+		else
+			(*client).println(F("<h2>Access Denied</h2>"));
+	}
+	(*client).println();
+}
+
+void ApiRequest_GetHomePage(EthernetClient *client)
+{
+	if (file.open(&root, "INDEX.HTM", O_READ)) {
+		ApiRequest_GetSuccessHeader(client, false);
+		int16_t c;
+		while ((c = file.read()) > 0) {
+			(*client).print((char)c);
+		}
+		file.close();
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, true, false);
+		cryticalError(); ///!!!!!!!!!!!!		
+	}
+}
+
+void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
+{
+
+	// this time no space after the /, so a sub-file!
+	//char *filename;
+
+	//Next 2 lines create pointer of sub string for filename and trims clientline
+	//filename = clientline + 10; // look after the "GET /file/" (10 chars)
+	// a little trick, look for the " HTTP/1.1" string and 
+	// turn the first character of the substring into a 0 to clear it out.
+	(strstr(filename, " HTTP"))[0] = 0;
+
+	if (file.open(&root, filename, O_READ)) {
+		ApiRequest_GetSuccessHeader(client, strstr(filename, ".JSN") != 0);
+		int16_t c;
+		while ((c = file.read()) > 0) {
+			(*client).print((char)c);
+		}
+		file.close();			
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, true, false);			
+	}
+}
+
+void ApiRequest_GetRam(EthernetClient *client)
+{
+	ApiRequest_GetSuccessHeader(client, true);
+	(*client).print(F("{ \"min\":\""));
+	(*client).print(minMaxRam[0], DEC);
+	(*client).print(F("\", \"max\":\""));
+	(*client).print(minMaxRam[1], DEC);
+	(*client).print(F("\" }"));
+}
+
+void ApiRequest_GetDateTime(EthernetClient *client)
+{
+	ApiRequest_GetSuccessHeader(client, true);
+	(*client).print(F("{ \"datetime\":\""));
+	printCurrentStringDate(client);
+	(*client).print(F("\" }"));
+
+	/*printCurrentStringDate_Debug(client);*/
+}
+
+void ApiRequest_PutSettings(EthernetClient *client, char* arguments)
+{
+	//012345678901234567 
+	//A=55555&U=55555111
+	if (isPassCorrect(&arguments[2]))
+	{
+		settings[0] = arguments[10];
+		settings[1] = arguments[11];
+		settings[2] = arguments[12];
+		settings[3] = arguments[13];
+		settings[4] = arguments[14]; //admin pass
+		settings[5] = arguments[15]; //log internet traffic
+		settings[6] = arguments[16]; //log frequency in minutes
+		settings[7] = arguments[17]; //keep log of free ram per session
+		saveSettings();
+
+		ApiRequest_GetSuccessHeader(client, true);
+		(*client).println(F("{ \"response\":\"Success\" }"));
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, false, true);
+	}
+}
+
+void ApiRequest_PutDateTime(EthernetClient *client, char* arguments)
+{
+	//          10        20       30         40
+	//01234567890123456789012345678901234567890 
+	//A=55555&D=YYMMDDhhmmssw
+	//A=55555&D=YYMMDDhhmmssw
+
+	//to update clock do:
+	//setDS3231time(15, 2, 10, 23, 43, 10, 3);  //2015-05-22 21:15:30 tuesday
+	if (isPassCorrect(&arguments[2]))
+	{
+		setDS3231time(
+			toDec(arguments[10], arguments[11]), //y
+			toDec(arguments[12], arguments[13]), //m
+			toDec(arguments[14], arguments[15]), //d
+			toDec(arguments[16], arguments[17]), //h
+			toDec(arguments[18], arguments[19]), //m
+			toDec(arguments[20], arguments[21]), //s
+			toDec(arguments[22])                 //w			
+			);
+		ApiRequest_GetSuccessHeader(client, true);
+		(*client).print(F("{ \"response\":\"Success\", \"newdate\" : \""));
+		printCurrentStringDate(client);
+		(*client).println(F("\" }"));
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, false, true);
+	}
+}
+
+byte toDec(char A, char B)
+{
+	char t[2] = {A, B};
+	logRamUsage();
+	return atoi(dateTimeConversionValue);
+}
+byte toDec(char A)
+{
+	char t[1] = { A };
+	return atoi(t);
+}
+
+void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
+{
+	if (isPassCorrect(&arguments[2]))
+	{		
+		ApiRequest_GetSuccessHeader(client, true);
+		(*client).println(F("{ \"response\":\"Success\" }"));
+		resetFunc();
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, false, true);
 	}
 
 }
@@ -570,7 +786,7 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 			printTwoDigits(client, FAT_MINUTE(p.lastWriteTime));
 			(*client).print(F(":"));
 			printTwoDigits(client, FAT_SECOND(p.lastWriteTime));
-
+			logRamUsage();
 		}
 		// print size if requested
 		if (!DIR_IS_SUBDIR(&p) && (flags & LS_SIZE)) {
@@ -590,11 +806,6 @@ void printTwoDigits(EthernetClient *client, uint8_t v) {
 }
 
 /*############################ Clock #########################################*/
-
-//to update clock do:
-//setDS3231time(15, 2, 10, 
-//	          23, 43, 10, 
-//			  3);  //2015-05-22 21:15:30 friday
 
 // Convert normal decimal numbers to binary coded decimal
 byte decToBcd(byte val)
@@ -734,10 +945,81 @@ void printCurrentStringDate(EthernetClient *file)
 		(*file).print(F("0"));
 	}
 	(*file).print(itoa(second, dateTimeConversionValue, DEC));
-
-	//	file.print(day[dayOfWeek]);
+	(*file).print(F(" "));
+	(*file).print(day[dayOfWeek]);
 
 }
+
+//void printCurrentStringDate_Debug(EthernetClient *file)
+//{
+//
+//	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+//	// retrieve data from DS3231
+//	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
+//	// send it to the serial monitor
+//	
+//	(*file).println();
+//	(*file).print(year, DEC);
+//	(*file).print(" ");
+//	(*file).print(month, DEC);
+//	(*file).print(" ");
+//	(*file).print(dayOfMonth, DEC);
+//	(*file).print(" ");
+//	(*file).print(hour, DEC);
+//	(*file).print(" ");
+//	(*file).print(minute, DEC);
+//	(*file).print(" ");
+//	(*file).print(second, DEC);
+//	(*file).print(" ");
+//	(*file).print(dayOfWeek, DEC);
+//
+//
+//	(*file).println();
+//	(*file).print(year, BIN);
+//	(*file).print(" ");
+//	(*file).print(month, BIN);
+//	(*file).print(" ");
+//	(*file).print(dayOfMonth, BIN);
+//	(*file).print(" ");
+//	(*file).print(hour, BIN);
+//	(*file).print(" ");
+//	(*file).print(minute, BIN);
+//	(*file).print(" ");
+//	(*file).print(second, BIN);
+//	(*file).print(" ");
+//	(*file).print(dayOfWeek, BIN);
+//	(*file).print(" ");
+//	(*file).println();
+//
+//
+//	(*file).print(year, HEX);
+//	(*file).print(" ");
+//	(*file).print(month, HEX);
+//	(*file).print(" ");
+//	(*file).print(dayOfMonth, HEX);
+//	(*file).print(" ");
+//	(*file).print(hour, HEX);
+//	(*file).print(" ");
+//	(*file).print(minute, HEX);
+//	(*file).print(" ");
+//	(*file).print(second, HEX);
+//	(*file).print(" ");
+//	(*file).print(dayOfWeek, HEX);
+//
+//	(*file).write(year);
+//	(*file).print(" ");
+//	(*file).write(month);
+//	(*file).print(" ");
+//	(*file).write(dayOfMonth);
+//	(*file).print(" ");
+//	(*file).write(hour);
+//	(*file).print(" ");
+//	(*file).write(minute);
+//	(*file).print(" ");
+//	(*file).write(second);
+//	(*file).print(" ");
+//	(*file).write(dayOfWeek);
+//}
 
 char* getCurrentLogFileName(){
 
@@ -840,7 +1122,7 @@ void error(const __FlashStringHelper* line)
 
 }
 
-void logHttp(char* line){
+void logHttp(char* line, char* args){
 
 	//Serial.println(line);
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
@@ -848,6 +1130,8 @@ void logHttp(char* line){
 		if (file.isFile()){
 			file.print(F("{ \"HTTP\":\""));
 			file.print(line);
+			file.print(F("\", \"params\":\""));
+			file.print(args);
 			file.print(F("\", "));
 			file.print(F("\"datetime\":\""));
 			printCurrentStringDateToFile(&file, true);
@@ -881,4 +1165,11 @@ void cryticalError(){
 
 	resetFunc();  //call reset
 }
+
+//int freeRam()
+//{
+//	extern int __heap_start, *__brkval;
+//	int v;
+//	return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
+//}
 /**************************************************************************/
