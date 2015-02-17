@@ -446,6 +446,10 @@ void checkForApiRequests()
 				if (strstr(clientline, "GET / ") != 0) {	
 					ApiRequest_GetHomePage(&client);
 				}
+				/****************************** manifest file **********************************/
+				else if (strstr(clientline, "GET /offline.che") != 0) {
+					ApiRequest_GetIndividualFile(&client, clientline + 5);
+				}
 				/****************************** file content (ADMIN) ***************************/
 				else if (strstr(clientline, "GET /file/") != 0) {
 					ApiRequest_GetIndividualFile(&client, clientline + 10, putargs);
@@ -542,11 +546,13 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 	params[BUFSIZ-1] = 0;
 }
 
-void ApiRequest_GetSuccessHeader(EthernetClient *client, bool isJson)
+void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
 {
 	(*client).println(F("HTTP/1.1 200 OK"));
-	if (isJson)
+	if (strstr(filename, ".JSN") != 0)
 		(*client).println(F("Content-Type: application/json"));
+	else if (strstr(filename, ".CHE") != 0)
+		(*client).println(F("Content-Type: text/cache-manifest"));
 	else
 		(*client).println(F("Content-Type: text/html"));
 	(*client).println(F("Connection: close"));
@@ -637,7 +643,7 @@ void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* 
 		(strstr(filename, " HTTP"))[0] = 0;
 
 		if (file.open(&root, filename, O_READ)) {
-			ApiRequest_GetSuccessHeader(client, strstr(filename, ".JSN") != 0);
+			ApiRequest_GetSuccessHeader(client, filename);
 			int16_t c;
 			while ((c = file.read()) > 0) {
 				(*client).print((char)c);
@@ -653,9 +659,34 @@ void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* 
 	}
 }
 
+void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
+{
+
+		// this time no space after the /, so a sub-file!
+		//char *filename;
+
+		//Next 2 lines create pointer of sub string for filename and trims clientline
+		//filename = clientline + 10; // look after the "GET /file/" (10 chars)
+		// a little trick, look for the " HTTP/1.1" string and 
+		// turn the first character of the substring into a 0 to clear it out.
+		(strstr(filename, " HTTP"))[0] = 0;
+
+		if (file.open(&root, filename, O_READ)) {
+			ApiRequest_GetSuccessHeader(client, filename);
+			int16_t c;
+			while ((c = file.read()) > 0) {
+				(*client).print((char)c);
+			}
+			file.close();
+		}
+		else{
+			ApiRequest_GetErrorScreen(client, true, false);
+		}
+}
+
 void ApiRequest_GetRam(EthernetClient *client)
 {
-	ApiRequest_GetSuccessHeader(client, true);
+	ApiRequest_GetSuccessHeader(client, ".JSN");
 	(*client).print(F("{ \"min\":\""));
 	(*client).print(minMaxRam[0], DEC);
 	(*client).print(F("\", \"max\":\""));
@@ -665,7 +696,7 @@ void ApiRequest_GetRam(EthernetClient *client)
 
 void ApiRequest_GetDateTime(EthernetClient *client)
 {
-	ApiRequest_GetSuccessHeader(client, true);
+	ApiRequest_GetSuccessHeader(client, ".JSN");
 	(*client).print(F("{ \"datetime\":\""));
 	printCurrentStringDate(client);
 	(*client).print(F("\" }"));
@@ -689,7 +720,7 @@ void ApiRequest_PutSettings(EthernetClient *client, char* arguments)
 		settings[7] = arguments[17]; //keep log of free ram per session
 		saveSettings();
 
-		ApiRequest_GetSuccessHeader(client, true);
+		ApiRequest_GetSuccessHeader(client, ".JSN");
 		(*client).println(F("{ \"response\":\"Success\" }"));
 	}
 	else{
@@ -718,7 +749,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* arguments)
 			toDec(arguments[20], arguments[21]), //s
 			toDec(arguments[22])                 //w			
 			);
-		ApiRequest_GetSuccessHeader(client, true);
+		ApiRequest_GetSuccessHeader(client, ".JSN");
 		(*client).print(F("{ \"response\":\"Success\", \"newdate\" : \""));
 		printCurrentStringDate(client);
 		(*client).println(F("\" }"));
@@ -749,7 +780,7 @@ void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 {
 	if (isPassCorrect(&arguments[2]))
 	{		
-		ApiRequest_GetSuccessHeader(client, true);
+		ApiRequest_GetSuccessHeader(client, ".JSN");
 		(*client).println(F("{ \"response\":\"Success\" }"));
 		resetFunc();
 	}

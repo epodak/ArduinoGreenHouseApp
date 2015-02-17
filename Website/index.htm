@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html>
+<html manifest="offline.che">
 <head>
   <title>Green House</title>
   <meta charset="utf-8">
@@ -9,14 +9,13 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/angularjs-toaster/0.4.10/toaster.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css" />
 
   <style type="text/css">
     /*body {
-      padding-top: 80px;
-    }*/
-    ul>li>a.navlink {
-      padding:7px;
+        padding-top: 80px;
+      }*/
+    ul > li > a.navlink {
+      padding: 7px;
     }
 
     .green {
@@ -30,6 +29,24 @@
     .red {
       color: #a94442;
     }
+
+    /* page link */
+    div[ng-view].ng-enter {
+      -webkit-animation: fadeInRight 0.5s;
+      animation: fadeInRight 0.5s;
+    }
+
+    /* ng-hide and ng-show */
+    .ng-hide-remove {
+      -webkit-animation: bounceIn 2.5s;
+      animation: bounceIn 2.5s;
+    }
+
+    .ng-hide-add {
+      -webkit-animation: flipOutX 2.5s;
+      animation: flipOutX 2.5s;
+      display: block !important;
+    }
   </style>
 </head>
 <body>
@@ -42,8 +59,6 @@
       <div ng-view data-ng-view-animate="zoomIn"></div>
     </div>
 
-    <div data-ng-include="'footer.html'"></div>
-
   </div>
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
@@ -53,7 +68,6 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-sanitize.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular-route.min.js"></script>
-  <!--<script src=" />/cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.13/angular-ui-router.min.js"></script>-->
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-animate.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.12.0/ui-bootstrap-tpls.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-utils/0.1.1/angular-ui-utils.min.js"></script>
@@ -65,65 +79,49 @@
       <div class="container">
 
         <div class="navbar-header text-center">
-          <!--<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar123" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>-->
           <a class="navbar-brand" href="/#/"><i class="fa fa-leaf green"></i> Green House</a>
         </div>
 
-
-        <!--<div id="navbar123" class="navbar-collapse collapse" aria-expanded="false" style="height: 1px;">-->
-        <ul class="nav navbar-nav">
-          <li title="Click to refresh new data">
-            <a href="#" class="navlink">
-              <i class="fa fa-refresh fa-lg green" style="position:relative;top:10px; "></i>
-              <span>2015 May 22 13:32:15</span><br />
-              <small style="margin-left:20px;">Click to refresh new data</small>
-            </a>
-          </li>
-        </ul>
-        <ul class="nav navbar-nav navbar-right">
-          <li>
-            <a href="#" class="navlink">
-              <div class="btn-group" role="group">
-                <span type="button" class="btn btn-primary active">C&deg;</span>
-                <span type="button" class="btn btn-default">F&deg;</span>
-              </div>
-            </a>
-          </li>
-        </ul>
-        <!--</div>  /.navbar-collapse -->
-
-      </div>   <!-- /.container-fluid -->
-    </nav>
-  </script>
-
-  <script type="text/ng-template" id="footer.html">
-
-    <footer class="navbar navbar-default navbar-fixed-bottom text-center">
-      <div class="container">
-        <!--<ul class="nav navbar-nav animated fadeIn">
-          <li><a target="_blank" href="https://github.com/miticv/ArduinoGreenHouseApp">&copy; 2015 - Arduino Green House App <i class="fa fa-external-link"></i></a></li>
-        </ul>-->
         <ul class="nav navbar-nav navbar-right">
           <li><a ng-hide="layout.isLoggedIn" href="/#/admin"><i class="fa fa-wrench"></i> admin</a></li>
         </ul>
-      </div>
-    </footer>
+      </div>   <!-- /.container-fluid -->
+    </nav>
   </script>
 
   <script type="text/ng-template" id="home.html">
 
     <div class="row">
-      <div class="col-sm-12">
+      <div class="col-sm-6 table-responsive">
+        <table class="table">
+          <caption>User Options</caption>
+          <tbody>
+            <tr class="success">
+              <td>
+
+                <i class="fa fa-refresh fa-lg green" style="position:relative;top:10px; "></i>
+                <span>2015 May 22 13:32:15</span><br />
+                <small style="margin-left:20px;">Click to refresh new data</small>
+
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <span type="button" class="btn btn-primary active">C&deg;</span>
+                  <span type="button" class="btn btn-default">F&deg;</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div><!-- /.col-sm-6 -->
+      <div class="col-sm-6 table-responsive">
         <table class="table">
           <caption>System statistics</caption>
           <tbody>
             <tr class="success">
               <td><i class="fa fa-heartbeat green"></i> System running for <span>4 days</span> since last reboot </td>
+            </tr>
+            <tr class="success">
               <td><i class="fa fa-tachometer green"></i> System is healthy with <span>417</span>b or Free RAM</td>
             </tr>
           </tbody>
@@ -206,44 +204,65 @@
 
   </script>
 
-  <script type="text/ng-template" id="admin.html">
+  <script type="text/ng-template" id="login.html">
 
     <div class="row">
       <div class="col-sm-12">
+
         <table class="table">
-          <caption>System statistics</caption>
+          <caption> Enter Credentials</caption>
           <tbody>
             <tr class="success">
-              <td><i class="fa fa-rocket green fa-lg"></i> System running for <strong><span class="green">4 days</span></strong> since last reboot </td>
-              <td><i class="fa fa-bar-chart green fa-lg"></i> System is healthy with <strong><span class="green">417b</span></strong> to <strong><span class="green">513b</span></strong> of Free RAM</td>
-              <td><i class="fa fa-recycle green fa-lg"></i> System has been booted <strong><span class="green">51</span></strong> times since <span class="green">Feb 5 2015</span></td>
+              <td>
+                <form class="form">
+                  <div class="form-group">
+                    <label class="sr-only" for="user">Username</label>
+                    <input type="username" class="form-control" id="user" placeholder="Username">
+                  </div>
+                  <div class="form-group">
+                    <label class="sr-only" for="pass">Password</label>
+                    <input type="password" class="form-control" id="pass" placeholder="Password">
+                  </div>
+                  <div class="form-group">
+                    <div class="">
+                      <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                  </div>
+                </form>
+              </td>
             </tr>
+
           </tbody>
         </table>
+
       </div>
     </div>
 
+  </script>
+
+  <script type="text/ng-template" id="admin.html">
+
+    <!-- System status -->
     <div class="row">
-      <div class="col-sm-12">        
+      <div class="col-sm-12">
         <table class="table">
-          <caption> Update Device Time</caption>
+          <caption> System status</caption>
           <tbody>
             <tr>
               <td class="success">
-                <form class="form-inline">
-                  <div class="form-group">
-                    <label class="sr-only" for="newDateTime">New Date / Time</label>
-                    <div class="input-group">
-                      <!--<div class="input-group-addon">$</div>-->
-                      <input type="datetime" class="form-control" id="newDateTime" placeholder="Set new date / time">
-                      <!--<div class="input-group-addon">.00</div>-->
-                    </div>
+
+                <div class="row">
+                  <div class="col-sm-4">
+                    <i class="fa fa-rocket green fa-lg"></i> System running for <strong><span class="green">4 days</span></strong> since last reboot
                   </div>
-                  <button type="submit" class="btn btn-primary">Submit</button>
-                </form>
-              </td>
-              <td class="success">
-                  Current Date Time on Device is <strong><span class="green">2015 May 22 13:42:22 </span></strong>
+                  <div class="col-sm-4">
+                    <i class="fa fa-bar-chart green fa-lg"></i> System is healthy with <strong><span class="green">417b</span></strong> to <strong><span class="green">513b</span></strong> of Free RAM
+                  </div>
+                  <div class="col-sm-4">
+                    <i class="fa fa-recycle green fa-lg"></i> System has been booted <strong><span class="green">51</span></strong> times since <span class="green">Feb 5 2015</span>
+                  </div>
+                </div>
+
               </td>
             </tr>
           </tbody>
@@ -251,87 +270,105 @@
       </div>
     </div>
 
+    <!--Change Settings-->
     <div class="row">
       <div class="col-sm-12">
-        
-          <table class="table">
-            <caption> Change Settings</caption>
-            <tbody>
-              <tr class="success">
-                <td>
-                  <form class="form-inline">
-                    <div class="form-group">
-                      <label class="sr-only" for="currentPass">Current Password</label>
-                      <input type="email" class="form-control" id="currentPass" placeholder="Current Password">
-                    </div>
-                    <div class="form-group">
-                      <label class="sr-only" for="newPass">New Password</label>
-                      <input type="password" class="form-control" id="newPass" placeholder="Password">
-                    </div>
-                    <br/><br />
-                    <div class="form-group">
-                      <div class="">
-                        <div class="checkbox">
-                          <label>
-                            Log http request in log file: <input type="checkbox"> 
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    <br /><br />
-                    <div class="form-group">
-                      <div class="">
-                        <div class="checkbox">
-                          <label>
-                            Log Ram usage in log file: <input type="checkbox">
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    <br /><br />
-                    <div class="form-group">
-                      <div class="">
-                        <div class="checkbox">
-                          <label>
-                            Set Sensor log frequency: <input type="checkbox">
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <div class="">
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                      </div>
-                    </div>
-                  </form>
-                </td>
-              </tr>
 
-             
-              <!--<tr class="success">
-                <td>
-                  
-                </td>
-               
-              </tr>-->
-              <!--<tr class="success">
-                <td><button type="submit" class="btn btn-default">Sign in</button></td>
-                <td><i class="fa fa-tachometer green"></i> Change Admin Password READY</td>
-                <td><i class="fa fa-tachometer green"></i> Log http request in log file (Y N) READY</td>
-                <td><i class="fa fa-tachometer green"></i> Log Ram usage in log file (Y N) READY</td>
-                <td><i class="fa fa-tachometer green"></i> Set Sensor log frequency (10-0, 30-1, 60-2 min) READY</td>
-                <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
-                <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
-                <td><i class="fa fa-tachometer green"></i> Send Email</td>
-                <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
-                <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
-              </tr>-->
-            </tbody>
-          </table>
-        
+        <table class="table">
+          <caption> System Settings</caption>
+          <tbody>
+            <tr class="success">
+              <td>
+                <div class="row">
+                  <!-- Log Settings -->
+                  <div class="col-sm-4">
+                    <form class="form">
+                      <div class="form-group">
+                        <label>Change Log Settings</label>
+                      </div>
+                      <div class="form-group">
+                        <div class="checkbox">
+                          <label>
+                            <input type="checkbox">
+                            Log http request in log file
+                          </label>
+                        </div>
+                        <div class="checkbox">
+                          <label>
+                            <input type="checkbox">
+                            Log RAM usage in log file
+                          </label>
+                        </div>
+                        <div class="checkbox">
+                          <label>
+                            Set Sensor log frequency:
+                            <select class="form-control">
+                              <option value="0">10 min</option>
+                              <option value="1">30 min</option>
+                              <option value="2">60 min</option>
+                            </select>
+                          </label>
+                        </div>
+                      </div>
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                  </div>
+                  <!-- Date Time -->
+                  <div class="col-sm-4">
+                    <form class="form">
+                      <div class="form-group">
+                        <label>Change Device Time</label>
+                      </div>
+                      <div class="form-group">
+                        <strong><span class="green">2015 May 22 13:42:22 </span></strong>
+                      </div>
+                      <div class="form-group">
+                        <label class="sr-only" for="newDateTime">New Time</label>
+                        <div class="input-group">
+                          <!--<div class="input-group-addon">$</div>-->
+                          <input type="datetime" class="form-control" id="newDateTime" placeholder="Set new time">
+                          <!--<div class="input-group-addon">.00</div>-->
+                        </div>
+                      </div>
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                  </div>
+                  <!-- Password -->
+                  <div class="col-sm-4">
+                    <form class="form">
+                      <div class="form-group">
+                        <label>Change your password</label>
+                      </div>
+                      <div class="form-group">
+                        <label class="sr-only" for="currentPass">Current Password</label>
+                        <input type="email" class="form-control" id="currentPass" placeholder="Current Password">
+                      </div>
+                      <div class="form-group">
+                        <label class="sr-only" for="newPass">New Password</label>
+                        <input type="password" class="form-control" id="newPass" placeholder="Password">
+                      </div>
+                      <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+
+            <!--<tr class="TO TO">
+              <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
+              <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
+              <td><i class="fa fa-tachometer green"></i> Send Email</td>
+              <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
+              <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
+            </tr>-->
+          </tbody>
+        </table>
+
       </div>
     </div>
 
+    <!--Maintenance-->
     <div class="row">
       <div class="col-sm-12">
         <table class="table">
@@ -340,7 +377,50 @@
             <tr class="success">
               <td><i class="fa fa-tachometer green"></i> View files (Links) READY</td>
               <td><i class="fa fa-tachometer green"></i> View sessions ADMIN</td>
-              <td><i class="fa fa-tachometer green"></i> Reboot ADMIN </td>             
+              <td><i class="fa fa-tachometer green"></i> Reboot ADMIN </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!--Reboot-->
+    <div class="row">
+      <div class="col-sm-12">
+        <table class="table">
+          <caption> Reboot Device</caption>
+          <tbody>
+            <tr class="success">
+              <td>
+                <div class="row">
+                  <div class="col-sm-12 text-center">
+                    <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"><i class="fa fa-power-off"></i> Reboot</button>
+                    <div class="collapse" id="collapseExample">
+                      <div class="well">
+                        <div class="row">
+                          <div class="col-xs-12">
+                            Are you sure?
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-xs-3">
+                          </div>
+                          <div class="col-xs-2">
+                            <button type="button" class="btn btn-success btn-lg">No</button>
+                          </div>
+                          <div class="col-xs-2">
+                          </div>
+                          <div class="col-xs-2">
+                            <button type="button" class="btn btn-danger btn-lg">Yes</button>
+                          </div>
+                          <div class="col-xs-3">
+                          </div>
+                          </row>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -349,14 +429,13 @@
 
   </script>
 
-
-
   <script>
-    angular.module('greenhouse', ['ngRoute']).
+    angular.module('greenhouse', ['ngRoute', 'ngAnimate']).
       config(['$routeProvider', function ($routeProvider) {
         $routeProvider.
          when("/", { templateUrl: "home.html", controller: "homeController" }).
          when("/admin", { templateUrl: "admin.html", controller: "adminController" }).
+         when("/login", { templateUrl: "login.html", controller: "loginController" }).
          otherwise({ redirectTo: '/' });
       }]);
 
@@ -374,7 +453,7 @@
           setDateTime: setDateTime,
           doReboot: doReboot,
           viewFiles: viewFiles,
-          setRefreshTime: setRefreshTime
+          setSettings: setSettings
 
         });
 
@@ -492,7 +571,7 @@
 
         }
 
-        function setRefreshTime(pariod) {
+        function setSettings(pariod) {
 
           var request = $http({
             method: "delete",
@@ -538,7 +617,6 @@
       controller('adminController', ['$scope', 'greenApiService', function ($scope, greenApiService) {
 
       }]);
-
 
   </script>
 
