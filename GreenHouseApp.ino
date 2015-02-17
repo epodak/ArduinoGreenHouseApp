@@ -446,34 +446,31 @@ void checkForApiRequests()
 				if (strstr(clientline, "GET / ") != 0) {	
 					ApiRequest_GetHomePage(&client);
 				}
-				/****************************** file content *********************************/
+				/****************************** file content (ADMIN) ***************************/
 				else if (strstr(clientline, "GET /file/") != 0) {
-					ApiRequest_GetIndividualFile(&client, clientline + 10);
+					ApiRequest_GetIndividualFile(&client, clientline + 10, putargs);
 				}
-				/***************************** list files *************************************/
+				/***************************** list files  (ADMIN) *****************************/
 				else if (strstr(clientline, "GET /files") != 0) {
-					ApiRequest_GetSuccessHeader(&client, false);
-					// print all the files, use a helper to keep it clean
-					client.println(F("<h2>Files:</h2>"));
-					ListFiles(&client, LS_SIZE); //LS_SIZE | LS_DATE
+					ApiRequest_GetFileList(&client, putargs);
 				}
-				/***************************** show clock *************************************/
+				/***************************** show clock **************************************/
 				else if (strstr(clientline, "GET /clock") != 0) {
 					ApiRequest_GetDateTime(&client);
 				}
-				/***************************** show ram *************************************/
+				/***************************** show ram ****************************************/
 				else if (strstr(clientline, "GET /freeram") != 0) {
 					ApiRequest_GetRam(&client);
 				}
-				/***************************** update settings *************************************/
+				/***************************** update settings  (ADMIN) ************************/
 				else if (strstr(clientline, "PUT /settings") != 0) {
 					ApiRequest_PutSettings(&client, putargs);
 				}
-				/***************************** update clock *************************************/
+				/***************************** update clock  (ADMIN) ***************************/
 				else if (strstr(clientline, "PUT /clock") != 0) {
 					ApiRequest_PutDateTime(&client, putargs);
 				}
-				/***************************** update clock *************************************/
+				/***************************** reboot  (ADMIN)  ********************************/
 				else if (strstr(clientline, "PUT /reboot") != 0) {
 					ApiRequest_PutReboot(&client, putargs);
 				}
@@ -603,28 +600,56 @@ void ApiRequest_GetHomePage(EthernetClient *client)
 	}
 }
 
-void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
-{
+void ApiRequest_GetFileList(EthernetClient *client, char* arguments){
 
-	// this time no space after the /, so a sub-file!
-	//char *filename;
-
-	//Next 2 lines create pointer of sub string for filename and trims clientline
-	//filename = clientline + 10; // look after the "GET /file/" (10 chars)
-	// a little trick, look for the " HTTP/1.1" string and 
-	// turn the first character of the substring into a 0 to clear it out.
-	(strstr(filename, " HTTP"))[0] = 0;
-
-	if (file.open(&root, filename, O_READ)) {
-		ApiRequest_GetSuccessHeader(client, strstr(filename, ".JSN") != 0);
-		int16_t c;
-		while ((c = file.read()) > 0) {
-			(*client).print((char)c);
-		}
-		file.close();			
+	/* in PUT request pass is passed as:
+	01234567
+	A=: 1234
+	*/
+	if (isPassCorrect(&arguments[4]))
+	{
+		ApiRequest_GetSuccessHeader(client, false);
+		// print all the files, use a helper to keep it clean
+		(*client).println(F("<h2>Files:</h2>"));
+		ListFiles(client, LS_SIZE); //LS_SIZE | LS_DATE
 	}
 	else{
-		ApiRequest_GetErrorScreen(client, true, false);			
+		ApiRequest_GetErrorScreen(client, false, false);
+	}
+
+}
+
+void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* arguments)
+{
+	/* in PUT request pass is passed as: 
+	01234567
+	A=: 1234
+	*/
+	if (isPassCorrect(&arguments[4]))
+	{
+		// this time no space after the /, so a sub-file!
+		//char *filename;
+
+		//Next 2 lines create pointer of sub string for filename and trims clientline
+		//filename = clientline + 10; // look after the "GET /file/" (10 chars)
+		// a little trick, look for the " HTTP/1.1" string and 
+		// turn the first character of the substring into a 0 to clear it out.
+		(strstr(filename, " HTTP"))[0] = 0;
+
+		if (file.open(&root, filename, O_READ)) {
+			ApiRequest_GetSuccessHeader(client, strstr(filename, ".JSN") != 0);
+			int16_t c;
+			while ((c = file.read()) > 0) {
+				(*client).print((char)c);
+			}
+			file.close();
+		}
+		else{
+			ApiRequest_GetErrorScreen(client, true, false);
+		}
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, false, false);
 	}
 }
 
@@ -683,6 +708,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* arguments)
 	//setDS3231time(15, 2, 10, 23, 43, 10, 3);  //2015-05-22 21:15:30 tuesday
 	if (isPassCorrect(&arguments[2]))
 	{
+		/* should we check here if all numbers are between 0 amd 9, otherwise error out? */
 		setDS3231time(
 			toDec(arguments[10], arguments[11]), //y
 			toDec(arguments[12], arguments[13]), //m
@@ -704,14 +730,19 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* arguments)
 
 byte toDec(char A, char B)
 {
-	char t[2] = {A, B};
 	logRamUsage();
-	return atoi(dateTimeConversionValue);
+	/* convert each ASCII to byte value and add them 
+	Example:
+	VAR  A     ,B
+	ASCI 1      5
+	DEC: 49    ,53    
+	BIN: 110001,110101	
+	*/
+	return ((A - '0') * 10 + (B - '0'));
 }
 byte toDec(char A)
 {
-	char t[1] = { A };
-	return atoi(t);
+	return A - '0';
 }
 
 void ApiRequest_PutReboot(EthernetClient *client, char* arguments)

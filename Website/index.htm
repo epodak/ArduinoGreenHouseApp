@@ -214,9 +214,9 @@
           <caption>System statistics</caption>
           <tbody>
             <tr class="success">
-              <td><i class="fa fa-heartbeat green"></i> System running for <span>4 days</span> since last reboot </td>
-              <td><i class="fa fa-tachometer green"></i> System is healthy with <span>417</span>b or Free RAM</td>
-              <td>total count device booted</td>
+              <td><i class="fa fa-rocket green fa-lg"></i> System running for <strong><span class="green">4 days</span></strong> since last reboot </td>
+              <td><i class="fa fa-bar-chart green fa-lg"></i> System is healthy with <strong><span class="green">417b</span></strong> to <strong><span class="green">513b</span></strong> of Free RAM</td>
+              <td><i class="fa fa-recycle green fa-lg"></i> System has been booted <strong><span class="green">51</span></strong> times since <span class="green">Feb 5 2015</span></td>
             </tr>
           </tbody>
         </table>
@@ -224,12 +224,27 @@
     </div>
 
     <div class="row">
-      <div class="col-sm-12">
+      <div class="col-sm-12">        
         <table class="table">
           <caption> Update Device Time</caption>
           <tbody>
-            <tr class="success">
-              <td><i class="fa fa-heartbeat green"></i> Update Device Time READY</td>
+            <tr>
+              <td class="success">
+                <form class="form-inline">
+                  <div class="form-group">
+                    <label class="sr-only" for="newDateTime">New Date / Time</label>
+                    <div class="input-group">
+                      <!--<div class="input-group-addon">$</div>-->
+                      <input type="datetime" class="form-control" id="newDateTime" placeholder="Set new date / time">
+                      <!--<div class="input-group-addon">.00</div>-->
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+              </td>
+              <td class="success">
+                  Current Date Time on Device is <strong><span class="green">2015 May 22 13:42:22 </span></strong>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -238,22 +253,82 @@
 
     <div class="row">
       <div class="col-sm-12">
-        <table class="table">
-          <caption> Change Settings</caption>
-          <tbody>
-            <tr class="success">
-              <td><i class="fa fa-tachometer green"></i> Change Admin Password READY</td>
-              <td><i class="fa fa-tachometer green"></i> Log http request in log file (Y N) READY</td>
-              <td><i class="fa fa-tachometer green"></i> Log Ram usage in log file (Y N) READY</td>
-              <td><i class="fa fa-tachometer green"></i> Set Sensor log frequency (10-0, 30-1, 60-2 min) READY</td>
-              <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
-              <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
-              <td><i class="fa fa-tachometer green"></i> Send Email</td>
-              <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
-              <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
-            </tr>
-          </tbody>
-        </table>
+        
+          <table class="table">
+            <caption> Change Settings</caption>
+            <tbody>
+              <tr class="success">
+                <td>
+                  <form class="form-inline">
+                    <div class="form-group">
+                      <label class="sr-only" for="currentPass">Current Password</label>
+                      <input type="email" class="form-control" id="currentPass" placeholder="Current Password">
+                    </div>
+                    <div class="form-group">
+                      <label class="sr-only" for="newPass">New Password</label>
+                      <input type="password" class="form-control" id="newPass" placeholder="Password">
+                    </div>
+                    <br/><br />
+                    <div class="form-group">
+                      <div class="">
+                        <div class="checkbox">
+                          <label>
+                            Log http request in log file: <input type="checkbox"> 
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <br /><br />
+                    <div class="form-group">
+                      <div class="">
+                        <div class="checkbox">
+                          <label>
+                            Log Ram usage in log file: <input type="checkbox">
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <br /><br />
+                    <div class="form-group">
+                      <div class="">
+                        <div class="checkbox">
+                          <label>
+                            Set Sensor log frequency: <input type="checkbox">
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                      </div>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+
+             
+              <!--<tr class="success">
+                <td>
+                  
+                </td>
+               
+              </tr>-->
+              <!--<tr class="success">
+                <td><button type="submit" class="btn btn-default">Sign in</button></td>
+                <td><i class="fa fa-tachometer green"></i> Change Admin Password READY</td>
+                <td><i class="fa fa-tachometer green"></i> Log http request in log file (Y N) READY</td>
+                <td><i class="fa fa-tachometer green"></i> Log Ram usage in log file (Y N) READY</td>
+                <td><i class="fa fa-tachometer green"></i> Set Sensor log frequency (10-0, 30-1, 60-2 min) READY</td>
+                <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
+                <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
+                <td><i class="fa fa-tachometer green"></i> Send Email</td>
+                <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
+                <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
+              </tr>-->
+            </tbody>
+          </table>
+        
       </div>
     </div>
 
@@ -263,9 +338,9 @@
           <caption> Maintenance</caption>
           <tbody>
             <tr class="success">
-              <td><i class="fa fa-tachometer green"></i> View files (Links)</td>
-              <td><i class="fa fa-tachometer green"></i> View sessions</td>
-              <td><i class="fa fa-tachometer green"></i> Reboot</td>             
+              <td><i class="fa fa-tachometer green"></i> View files (Links) READY</td>
+              <td><i class="fa fa-tachometer green"></i> View sessions ADMIN</td>
+              <td><i class="fa fa-tachometer green"></i> Reboot ADMIN </td>             
             </tr>
           </tbody>
         </table>
