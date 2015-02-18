@@ -447,7 +447,7 @@ void checkForApiRequests()
 					ApiRequest_GetHomePage(&client);
 				}
 				/****************************** manifest file **********************************/
-				else if (strstr(clientline, "GET /offline.che") != 0) {
+				else if (strstr(clientline, "GET /cache.appcache") != 0) {
 					ApiRequest_GetIndividualFile(&client, clientline + 5);
 				}
 				/****************************** file content (ADMIN) ***************************/
@@ -661,15 +661,13 @@ void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* 
 
 void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
 {
-
-		// this time no space after the /, so a sub-file!
-		//char *filename;
-
-		//Next 2 lines create pointer of sub string for filename and trims clientline
-		//filename = clientline + 10; // look after the "GET /file/" (10 chars)
-		// a little trick, look for the " HTTP/1.1" string and 
-		// turn the first character of the substring into a 0 to clear it out.
-		(strstr(filename, " HTTP"))[0] = 0;
+	    // turning 'cache.appcache' into 'cache.app' (sd supports only 8.3 file structure)
+		if (strstr(filename, "cache HTTP") != 0){
+			(strstr(filename, "cache HTTP"))[0] = 0;
+		}
+		else{
+			(strstr(filename, " HTTP"))[0] = 0;
+		}
 
 		if (file.open(&root, filename, O_READ)) {
 			ApiRequest_GetSuccessHeader(client, filename);

@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html manifest="offline.che">
+<html manifest="cache.appcache">
 <head>
   <title>Green House</title>
   <meta charset="utf-8">
@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/angularjs-toaster/0.4.10/toaster.min.css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/css/bootstrap-datetimepicker.min.css" />
 
   <style type="text/css">
     /*body {
@@ -72,7 +73,7 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.12.0/ui-bootstrap-tpls.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-utils/0.1.1/angular-ui-utils.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js"></script>
-
+  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js"></script>
 
   <script type="text/ng-template" id="header.html">
     <nav class="navbar navbar-default text-center">
@@ -324,10 +325,10 @@
                       </div>
                       <div class="form-group">
                         <label class="sr-only" for="newDateTime">New Time</label>
-                        <div class="input-group">
+                        <div class="input-group" id="dateTmePicker" ui-datepicker ng-model="data.date">
                           <!--<div class="input-group-addon">$</div>-->
-                          <input type="datetime" class="form-control" id="newDateTime" placeholder="Set new time">
-                          <!--<div class="input-group-addon">.00</div>-->
+                          <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" />
+                          <div class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></div>
                         </div>
                       </div>
                       <button type="submit" class="btn btn-primary">Submit</button>
@@ -618,12 +619,43 @@
 
       }]);
 
+    angular.module('greenhouse').
+      directive('uiDatepicker', function uiDatepickerDirective() {
+        'use strict';
+
+        function link(scope, el, attr, ngModel) {
+          var input = el.find('input');
+          $(el).datetimepicker({
+            sideBySide: true,
+            showTodayButton: true,
+            useCurrent: true
+            //,format: "YYYY DD MM hh:mm:ss d"
+            //change: function uiDatepickerOnSelect(value) {
+            //  scope.$apply(function () {
+            //    ngModel.$setViewValue(value);
+            //  });
+            //}
+          });
+          input.on('blur keyup change', function () {
+            ngModel.$setViewValue(input.val());
+            console.log(input.val());
+          });
+        }
+
+        return {
+          restrict: 'A',
+          require: 'ngModel',
+          link: link
+        };
+      });
+
   </script>
 
   <script>
     $(document).ready(function () {
       angular.bootstrap(document, ['greenhouse']);
       //$('[data-toggle="tooltip"]').tooltip();
+      //$('#dateTmePicker').datetimepicker();
     });
   </script>
 
