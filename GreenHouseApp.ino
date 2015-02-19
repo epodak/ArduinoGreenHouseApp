@@ -624,9 +624,12 @@ void ApiRequest_GetOptionsScreen(EthernetClient *client)
 {
 
 	(*client).println(F("HTTP/1.1 200 OK"));
-	(*client).println(F("Allow: GET, PUT, POST, OPTIONS"));
-	(*client).println(F("Access-Control-Allow-Origin: *"));
-	(*client).println(F("Access-Control-Allow-Headers: PP"));
+	if (true){ //if settings allow other javascript websites to query our api
+		(*client).println(F("Allow: GET, PUT, POST, OPTIONS"));
+		(*client).println(F("Access-Control-Allow-Origin: *")); //add settings to allow specific origins too?
+		(*client).println(F("Access-Control-Allow-Headers: PP"));
+		(*client).println(F("Access-Control-Allow-Methods: GET, PUT, POST, OPTIONS"));
+	}
 	(*client).println(F("Connection: close"));
 	(*client).println();
 }

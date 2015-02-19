@@ -41,13 +41,13 @@
 
     /* ng-hide and ng-show */
     .ng-hide-remove {
-      -webkit-animation: bounceIn 2.5s;
-      animation: bounceIn 2.5s;
+      -webkit-animation: fadeIn 0.5s;
+      animation: fadeIn 0.5s;
     }
 
     .ng-hide-add {
-      -webkit-animation: flipOutX 2.5s;
-      animation: flipOutX 2.5s;
+      -webkit-animation: fadeOut 0.5s;
+      animation: fadeOut 0.5s;
       display: block !important;
     }
   </style>
@@ -77,6 +77,7 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
 
   <script type="text/ng-template" id="header.html">
     <nav class="navbar navbar-default text-center">
@@ -284,46 +285,48 @@
             <tr class="success">
               <td>
                 <div cg-busy="loading">
-                  <div class="row">
+                  <div class="row" ng-show="loaded">
                     <!-- Log Settings -->
                     <div class="col-sm-4">
-                      <form class="form">
+                      <form novalidate class="form">
                         <div class="form-group">
                           <label>Change Log Settings</label>
                         </div>
                         <div class="form-group">
                           <div class="checkbox">
                             <label>
-                              <input type="checkbox" ng-model="LogHttp">
+                              <input type="checkbox" ng-model="set.LogHttp">
                               Log http request in log file
                             </label>
                           </div>
                           <div class="checkbox">
                             <label>
-                              <input type="checkbox" ng-model="LogRAM">
+                              <input type="checkbox" ng-model="set.LogRAM">
                               Log RAM usage in session log file
                             </label>
                           </div>
                           <div class="checkbox">
                             <label>
-                              <input type="checkbox" ng-model="BootNoSD">
+                              <input type="checkbox" ng-model="set.BootNoSD">
                               Reboot if SD not present
                             </label>
                           </div>
                           <div class="checkbox">
                             <label>
                               Set Sensor log frequency:
-                              <select class="form-control" ng-model="SensorLogFreq"
-                                      ng-options="opt as opt.label for opt in sensorFreqOptions"></select>
-                              <!--<select class="form-control">
-                  <option value="0">10 min</option>
-                  <option value="1">30 min</option>
-                  <option value="2">60 min</option>
-                </select>-->
+                              <select class="form-control" ng-model="set.SensorLogFreq"
+                                      ng-options="opt as opt.label for opt in set.sensorFreqOptions"></select>
                             </label>
                           </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <div class="row">
+                          <div class="col-sm-4">
+                            <button type="submit" class="btn btn-primary" ng-disabled="!settingsChanged()" ng-click="saveSettings()">Submit</button>
+                          </div>
+                          <div class="col-sm-4">
+                            <button type="button" class="btn btn-danger" ng-hide="!settingsChanged()" ng-click="cancelChanges()">Cancel</button>
+                          </div>
+                        </div>
                       </form>
                     </div>
                     <!-- Date Time -->
@@ -333,17 +336,23 @@
                           <label>Change Device Time</label>
                         </div>
                         <div class="form-group">
-                          <strong><span class="green">{{time}} </span></strong>
+                          <strong><span class="green">{{time | amDateFormat:'MMMM Do YYYY, h:mm:ss A (dddd)' }} </span></strong>
                         </div>
                         <div class="form-group">
                           <label class="sr-only" for="newDateTime">New Time</label>
-                          <div class="input-group" id="dateTmePicker" ui-datepicker ng-model="data.date">
-                            <!--<div class="input-group-addon">$</div>-->
-                            <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" />
+                          <div class="input-group" id="dateTmePicker" ui-datepicker ng-model="newDate">
+                            <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" ng-model="newDateInput" />
                             <div class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></div>
                           </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <div class="row">
+                          <div class="col-sm-4">
+                            <button type="submit" class="btn btn-primary" ng-disabled="!newDate" ng-click="saveDate()">Submit</button>
+                          </div>
+                          <div class="col-sm-4">
+                            <button type="button" class="btn btn-danger" ng-hide="!newDate" ng-click="">Cancel</button>
+                          </div>
+                        </div>
                       </form>
                     </div>
                     <!-- Password -->
@@ -361,8 +370,14 @@
                           <input type="password" class="form-control" id="newPass" placeholder="Password">
                         </div>
                         <button type="submit" class="btn btn-primary">Submit</button>
+
                       </form>
                     </div>
+                  </div>
+                </div>
+                <div class="row" ng-hide="loaded">
+                  <div class="col-sm-12">
+                    Could not load settings. Please <a href="" ng-click="load()">refresh</a>
                   </div>
                 </div>
               </td>
@@ -405,30 +420,32 @@
           <tbody>
             <tr class="success">
               <td>
-                <div class="row">
-                  <div class="col-sm-12 text-center">
-                    <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"><i class="fa fa-power-off"></i> Reboot</button>
-                    <div class="collapse" id="collapseExample">
-                      <div class="well warning">
-                        <div class="row">
-                          <div class="col-xs-12">
-                            Are you sure?
+                <div cg-busy="booting">
+                  <div class=" row">
+                    <div class="col-sm-12 text-center">
+                      <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#collapseBoot" aria-expanded="false" aria-controls="collapseBoot"><i class="fa fa-power-off"></i> Reboot</button>
+                      <div class="collapse" id="collapseBoot">
+                        <div class="well warning">
+                          <div class="row">
+                            <div class="col-xs-12">
+                              Are you sure?
+                            </div>
                           </div>
-                        </div>
-                        <div class="row">
-                          <div class="col-xs-3">
+                          <div class="row">
+                            <div class="col-xs-3">
+                            </div>
+                            <div class="col-xs-2">
+                              <button type="button" class="btn btn-success btn-lg" data-target="#collapseBoot" data-toggle="collapse">No</button>
+                            </div>
+                            <div class="col-xs-2">
+                            </div>
+                            <div class="col-xs-2">
+                              <button type="button" class="btn btn-danger btn-lg" ng-click="reboot()">Yes</button>
+                            </div>
+                            <div class="col-xs-3">
+                            </div>
+                            </row>
                           </div>
-                          <div class="col-xs-2">
-                            <button type="button" class="btn btn-success btn-lg" data-target="#collapseExample" data-toggle="collapse">No</button>
-                          </div>
-                          <div class="col-xs-2">
-                          </div>
-                          <div class="col-xs-2">
-                            <button type="button" class="btn btn-danger btn-lg">Yes</button>
-                          </div>
-                          <div class="col-xs-3">
-                          </div>
-                          </row>
                         </div>
                       </div>
                     </div>
@@ -442,7 +459,7 @@
   </script>
 
   <script id="routing">
-    angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy']).
+    angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy', 'angularMoment']).
       config(['$routeProvider', function ($routeProvider) {
         $routeProvider.
          when("/", { templateUrl: "home.html", controller: "homeController" }).
@@ -458,7 +475,7 @@
 
         var host = 'http://miticv.duckdns.org:8080';
         sessionStorage.setItem('pass', '44444'); //for testing only!!
-
+        //#region service
         return ({
 
           //getSensorData: getSensorData,
@@ -477,7 +494,7 @@
 
           doReboot: doReboot
         });
-
+        //#endregion
         //#region IsAdmin
         function isAdmin(pin) {
 
@@ -553,6 +570,7 @@
 
     angular.module('greenhouse').
       value('toastr', toastr).
+      value('window', window).
       factory('NotifierService',
       ['toastr', '$window', '$log',
       function NotifierService(toastr, $window, $log) {
@@ -591,48 +609,118 @@
   <script id="admin">
 
     angular.module('greenhouse').
-      controller('adminController', ['$scope', 'greenApiService', 'NotifierService', '$q', function ($scope, greenApiService, NotifierService, $q) {
+      controller('adminController', ['$scope', 'greenApiService', 'NotifierService', '$q', '$interval', function ($scope, greenApiService, NotifierService, $q, $interval) {
 
-        $scope.settings = '';
-        $scope.time = '';
-        $scope.sensorFreqOptions = [
-          { label: '10 min', value: 0 },
-          { label: '10 min', value: 1 },
-          { label: '60 min', value: 2 }
-        ];
+        //$scope.settings = ''; //settings received from the device
+        $scope.set = {  //settings received from the device
+          LogHttp: '',
+          LogRAM: '',
+          BootNoSD: '',
+          SensorLogFreq: '',
+          sensorFreqOptions: [
+              { label: '10 min', value: 0 },
+              { label: '30 min', value: 1 },
+              { label: '60 min', value: 2 }
+          ]
+        };
+        $scope.loaded = true;
+        $scope.time; //stores moment format of the date on the device
+        $scope.stopTime; //used to stop runningTime counter if needed
+        $scope.loading; //used to show loading backdrop
+        $scope.booting; //used to show booting backdrop
 
-        $scope.LogHttp = false;
-        $scope.LogRAM = false;
-        $scope.BootNoSD = false;
-        $scope.SensorLogFreq = $scope.sensorFreqOptions[1];
-        $scope.error = '';
+        //functions:
+        $scope.load = load;
+        $scope.runningTime = runningTime;
+        $scope.saveSettings = saveSettings;
+        $scope.settingsChanged = settingsChanged;
+        $scope.cancelChanges = cancelChanges;
 
+        $scope.saveLogSettings = saveLogSettings;
+        $scope.reboot = reboot;
 
-        $scope.promiseSettingPass = greenApiService.getSettings();
-        $scope.promiseTime = greenApiService.getTime();
-        $scope.loading = $q.all([$scope.promiseSettingPass, $scope.promiseTime]);
+        $scope.load();
 
-        $scope.promiseSettingPass.then(
-          function success(data) {
-            $scope.settings = data.data;
-            sessionStorage.setItem('pass', $scope.settings.substring(0, 4)); //make usre pass is current!
-            $scope.LogHttp = $scope.settings.substring(4, 5) === '1';
-            $scope.SensorLogFreq = $scope.sensorFreqOptions[$scope.settings.substring(5, 6)];
-            $scope.LogRAM = $scope.settings.substring(6, 7) === '1';
-            $scope.BootNoSD = $scope.settings.substring(7, 8) === '1';
-            NotifierService.info("text", "title");
-          },
-          function error(e) {
-            $scope.error += "can not load settings.";
-          });
+        //internals
+        var originalSettings;
+        function settingsChanged() {
+          return !angular.equals($scope.set, originalSettings);
+        }
+        function cancelChanges() {
+          $scope.set = angular.copy(originalSettings);
+        }
 
-        $scope.promiseTime.then(
-          function success(data) {
-            $scope.time = data.data.datetime;
-          },
-          function error(e) {
-            $scope.error += "can not load time.";
-          });
+        //#region functions
+        function runningTime() {
+          $scope.time.add(1, 's');
+        }
+
+        function reboot() {
+          $scope.booting = greenApiService.doReboot().then(
+            function success(data) {
+              $('#collapseBoot').collapse();
+            },
+            function error(data) {
+              NotifierService.error("could not reboot device.Api failed.", "Error");
+            });
+        }
+
+        function saveSettings() {
+
+          var settings = sessionStorage.getItem('pass') + ($scope.set.LogHttp ? '1' : '0') + ($scope.set.SensorLogFreq.value) + ($scope.set.LogRAM ? '1' : '0') + ($scope.set.BootNoSD ? '1' : '0');
+          NotifierService.info(settings, "Settings to save");
+          $scope.booting = greenApiService.setSetting(settings).then(
+            function success(data) {
+              originalSettings = angular.copy($scope.set);
+              NotifierService.info("Saved.", "Success");
+            },
+            function error(data) {
+              NotifierService.error("could not save settings. Api failed.", "Error");
+            });
+        }
+
+        function saveLogSettings() {
+
+          $scope.booting = greenApiService.setSettings().then(
+            function success(data) {
+              $('#collapseBoot').collapse();
+            },
+            function error(data) {
+              NotifierService.error("could not reboot device.Api failed.", "Error");
+            });
+        }
+
+        // sequential calls both calls at the same time, and one fails (Arduino can not multi task)
+        //$scope.load = $q.all([$scope.promiseSettingPass, $scope.promiseTime]);
+        function load() {
+          $scope.loaded = true;
+          $scope.loading = greenApiService.getSettings().then(
+            function success(data) {
+              var settings = data.data;
+              sessionStorage.setItem('pass', settings.substring(0, 4)); //make user pass is current!
+              $scope.set.LogHttp = settings.substring(4, 5) === '1';
+              $scope.set.SensorLogFreq = $scope.set.sensorFreqOptions[settings.substring(5, 6)];
+              $scope.set.LogRAM = settings.substring(6, 7) === '1';
+              $scope.set.BootNoSD = settings.substring(7, 8) === '1';
+              originalSettings = angular.copy($scope.set);
+
+              return greenApiService.getTime().then(
+                    function success(data) {
+                      //2015-02-19 12:20:13 3  (1=sunday, 2=monday.... 7-sat)
+                      $scope.time = moment(data.data.datetime, "YYYY-MM-DD HH:mm:ss e");
+                      $scope.stopTime = $interval($scope.runningTime, 1000);
+                    },
+                    function error(e) {
+                      NotifierService.error("Can not load time.", "Error");
+                      $scope.loaded = false;
+                    });
+            },
+            function error(e) {
+              NotifierService.error("Can not load settings.", "Error");
+              $scope.loaded = false;
+            });
+        }
+        //#endregion
 
       }]);
 
@@ -652,13 +740,14 @@
           });
           input.on('blur keyup change', function () {
             ngModel.$setViewValue(input.val());
-            console.log(input.val());
+            //console.log(input.val());
           });
         }
 
         return {
           restrict: 'A',
           require: 'ngModel',
+          scope: { ngModel: '=' },
           link: link
         };
       });
