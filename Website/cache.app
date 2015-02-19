@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-# 2015-02-17:v4
+# 2015-02-17:v6
 # make sure you serve this file with "text/cache-manifest" content type
 
 

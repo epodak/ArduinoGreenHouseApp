@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
-<html manifest="cache.app">
+<html>
+<!--manifest="cache.app"-->
 <head>
   <title>Green House</title>
   <meta charset="utf-8">
@@ -8,7 +9,7 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/css/bootstrap.min.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/angularjs-toaster/0.4.10/toaster.min.css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/css/toastr.min.css" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/css/bootstrap-datetimepicker.min.css" />
 
   <style type="text/css">
@@ -290,34 +291,37 @@
                       <div class="form-group">
                         <div class="checkbox">
                           <label>
-                            <input type="checkbox">
+                            <input type="checkbox" ng-model="LogHttp">
                             Log http request in log file
                           </label>
                         </div>
                         <div class="checkbox">
                           <label>
-                            <input type="checkbox">
+                            <input type="checkbox" ng-model="LogRAM">
                             Log RAM usage in session log file
                           </label>
                         </div>
                         <div class="checkbox">
                           <label>
-                            <input type="checkbox">
+                            <input type="checkbox" ng-model="BootNoSD">
                             Reboot if SD not present
                           </label>
                         </div>
                         <div class="checkbox">
                           <label>
                             Set Sensor log frequency:
-                            <select class="form-control">
+                            <select class="form-control" ng-model="SensorLogFreq"
+                                    ng-options="opt as opt.label for opt in sensorFreqOptions"></select>
+                            <!--<select class="form-control">
                               <option value="0">10 min</option>
                               <option value="1">30 min</option>
                               <option value="2">60 min</option>
-                            </select>
+                            </select>-->
                           </label>
                         </div>
                       </div>
                       <button type="submit" class="btn btn-primary">Submit</button>
+                      {{settings}}, {{time}}
                     </form>
                   </div>
                   <!-- Date Time -->
@@ -432,10 +436,9 @@
         </table>
       </div>
     </div>
-
   </script>
 
-  <script>
+  <script id="routing">
     angular.module('greenhouse', ['ngRoute', 'ngAnimate']).
       config(['$routeProvider', function ($routeProvider) {
         $routeProvider.
@@ -443,186 +446,192 @@
          when("/admin", { templateUrl: "admin.html", controller: "adminController" }).
          when("/login", { templateUrl: "login.html", controller: "loginController" }).
          otherwise({ redirectTo: '/' });
-      }]);
 
+      }])
+  </script>
+  <script id="service">
     angular.module('greenhouse').
       service("greenApiService", ['$http', '$q', function ($http, $q) {
 
+        var host = 'http://miticv.duckdns.org:8080';
+        sessionStorage.setItem('pass', '44444'); //for testing only!!
+
         return ({
 
-          getSensorData: getSensorData,
-          getHistoryLog: getHistoryLog,
-          getMonthData: getMonthData,
-          getYearData: getYearData,
+          //getSensorData: getSensorData,
+          //getHistoryLog: getHistoryLog,
+          //getMonthData: getMonthData,
+          //getYearData: getYearData,
+          //viewFiles: viewFiles,
 
           isAdmin: isAdmin,
-          setDateTime: setDateTime,
-          doReboot: doReboot,
-          viewFiles: viewFiles,
-          setSettings: setSettings
 
+          setSettings: setSettings,
+          getSettings: getSettings,
+
+          getTime: getTime,
+          setTime: setTime,
+
+          doReboot: doReboot
         });
 
-        function getSensorData() {
-          //var request = $http({
-          //  method: "get",
-          //  url: "isadmin",
-          //  params: {
-          //    action: "get"
-          //  }
-          //});
-          //return (request.then(handleSuccess, handleError));
-          return { "Datetime": "2015-02-13 01:22:14", "AnalogSignal1": "5", "AnalogSignal2": "10", "AnalogSignal3": "11" };
-        }
+        //#region IsAdmin
+        function isAdmin(pin) {
 
-        function getHistoryLog() {
-          var request = $http({
+          $http({
             method: "get",
-            url: "admin",
-            params: {
-              action: "get"
+            url: host + '/pin?U=' + pin
+          }).sucess(function (data) {
+            if (data.data == 1) {
+              sessionStorage.setItem('pass', pin);
+              return true;
+            } else {
+              sessionStorage.removeItem('pass');
+              return false;
             }
+          }).error(function () {
+            sessionStorage.removeItem('pass');
+            return false;
           });
-          return (request.then(handleSuccess, handleError));
         }
-
-        function getMonthData() {
-          var request = $http({
-            method: "get",
-            url: "admin",
-            params: {
-              action: "get"
-            }
-          });
-          return (request.then(handleSuccess, handleError));
-        }
-
-        function getYearData() {
-          var request = $http({
-            method: "get",
-            url: "admin",
-            params: {
-              action: "get"
-            }
-          });
-          return (request.then(handleSuccess, handleError));
-        }
-
-        //ADMIN FUNCTIONS
-        function isAdmin(pass) {
-
-          var request = $http({
-            method: "delete",
-            url: "api/index.cfm",
-            params: {
-              action: "post"
-            },
-            data: {
-              id: id
-            }
-          });
-
-          return (request.then(handleSuccess, handleError));
-
-        }
-
-        function setDateTime(year, month, day, hour, min, sec, week) {
-
-          var request = $http({
-            method: "delete",
-            url: "api/index.cfm",
-            params: {
-              action: "post"
-            },
-            data: {
-              id: id
-            }
-          });
-
-          return (request.then(handleSuccess, handleError));
-
-        }
-
+        //#endregion
+        //#region doReboot
         function doReboot() {
 
-          var request = $http({
-            method: "delete",
-            url: "api/index.cfm",
-            params: {
-              action: "post"
-            },
-            data: {
-              id: id
-            }
+          return $http({
+            method: "put",
+            headers: { 'PP': sessionStorage.getItem('pass') },
+            url: host + '/reboot'
           });
-
-          return (request.then(handleSuccess, handleError));
-
         }
+        //#endregion
+        //#region setSettings
+        function setSettings(settings) {
 
-        function viewFiles() {
-
-          var request = $http({
-            method: "delete",
-            url: "api/index.cfm",
-            params: {
-              action: "post"
-            },
-            data: {
-              id: id
-            }
+          return $http({
+            method: "put",
+            headers: { 'PP': sessionStorage.getItem('pass') },
+            url: host + '/settings?U=' + settings
           });
-
-          return (request.then(handleSuccess, handleError));
-
         }
+        //#endregion
+        //#region getSettings
+        function getSettings() {
 
-        function setSettings(pariod) {
-
-          var request = $http({
-            method: "delete",
-            url: "api/index.cfm",
-            params: {
-              action: "post"
-            },
-            data: {
-              id: id
-            }
+          return $http({
+            method: "get",
+            headers: { 'PP': sessionStorage.getItem('pass') },
+            url: host + '/file/SETTINGS.TXT'
           });
-
-          return (request.then(handleSuccess, handleError));
-
         }
+        //#endregion
+        //#region getTime
+        function getTime() {
 
-        function handleError(response) {
-          if (
-              !angular.isObject(response.data) ||
-              !response.data.message
-              ) {
-            return ($q.reject("An unknown error occurred."));
-          }
-          return ($q.reject(response.data.message));
+          return $http({
+            method: "get",
+            headers: { 'PP': sessionStorage.getItem('pass') },
+            url: host + '/clock'
+          });
         }
+        //#endregion
+        //#region setTime
+        function setTime(year, month, day, hour, min, sec, week) {
 
-        function handleSuccess(response) {
-          return (response.data);
+          return $http({
+            method: "put",
+            headers: { 'PP': sessionStorage.getItem('pass') },
+            url: host + '/clock?U=' + year + month + day + hour + min + sec + week
+          });
         }
+        //#endregion
       }]);
 
 
+    angular.module('greenhouse').
+      value('toastr', toastr).
+      factory('NotifierService',
+      ['toastr', '$window', '$log',
+      function NotifierService(toastr, $window, $log) {
+        'use strict';
+
+        toastr.options.timeOut = 5000;
+        toastr.options.positionClass = 'toast-bottom-right';
+
+
+        function notify(type) {
+          return function (message, title) {
+            toastr[type](message, title);
+            //$log.debug(type + ':', message);
+          };
+        }
+
+        return {
+          error: notify('error'),
+          info: notify('info'),
+          success: notify('success'),
+          warning: notify('warning')
+        };
+      }]);
+  </script>
+  <script id="home">
     angular.module('greenhouse').
       controller('homeController', ['$scope', 'greenApiService', function ($scope, greenApiService) {
 
-        $scope.getData = function () {
-          greenApiService.getSensorData();
-        };
+        //$scope.getData = function () {
+        //  greenApiService.getSensorData();
+        //};
 
       }]);
+
+  </script>
+  <script id="admin">
 
     angular.module('greenhouse').
-      controller('adminController', ['$scope', 'greenApiService', function ($scope, greenApiService) {
+      controller('adminController', ['$scope', 'greenApiService', 'NotifierService', function ($scope, greenApiService, NotifierService) {
+
+        $scope.settings = '';
+        $scope.time = '';
+        $scope.sensorFreqOptions = [
+          { label: '10 min', value: 0 },
+          { label: '10 min', value: 1 },
+          { label: '60 min', value: 2 }
+        ];
+
+        $scope.LogHttp = false;
+        $scope.LogRAM = false;
+        $scope.BootNoSD = false;
+        $scope.SensorLogFreq = $scope.sensorFreqOptions[1];
+        $scope.error = '';
+
+
+
+        greenApiService.getSettings().then(
+          function success(data) {
+            $scope.settings = data.data;
+            sessionStorage.setItem('pass', $scope.settings.substring(0, 4)); //make usre pass is current!
+            $scope.LogHttp = $scope.settings.substring(4, 5) === '1';
+            $scope.SensorLogFreq = $scope.sensorFreqOptions[$scope.settings.substring(5, 6)];
+            $scope.LogRAM = $scope.settings.substring(6, 7) === '1';
+            $scope.BootNoSD = $scope.settings.substring(7, 8) === '1';
+            NotifierService.info("text", "title");
+          },
+          function error(e) {
+            $scope.error += "can not load settings.";
+          });
+
+        greenApiService.getTime().then(
+          function success(data) {
+            $scope.time = data.data.datetime;
+          },
+          function error(e) {
+            $scope.error += "can not load time.";
+          });
 
       }]);
+
+  </script>
+  <script id="directive">
 
     angular.module('greenhouse').
       directive('uiDatepicker', function uiDatepickerDirective() {
@@ -634,12 +643,6 @@
             sideBySide: true,
             showTodayButton: true,
             useCurrent: true
-            //,format: "YYYY DD MM hh:mm:ss d"
-            //change: function uiDatepickerOnSelect(value) {
-            //  scope.$apply(function () {
-            //    ngModel.$setViewValue(value);
-            //  });
-            //}
           });
           input.on('blur keyup change', function () {
             ngModel.$setViewValue(input.val());
@@ -656,11 +659,9 @@
 
   </script>
 
-  <script>
+  <script id="startup">
     $(document).ready(function () {
       angular.bootstrap(document, ['greenhouse']);
-      //$('[data-toggle="tooltip"]').tooltip();
-      //$('#dateTmePicker').datetimepicker();
     });
   </script>
 

@@ -82,6 +82,7 @@ int i; //for loops and general use.
    5 - log internet traffic
    6 - log frequency
    7 - log Ram Usage
+   8 - boot if no SD
    */
 const uint8_t settingsLength = 9;
 unsigned char settings[settingsLength];
@@ -455,7 +456,10 @@ void checkForApiRequests()
 				if (settings[5] == '1') {				
 					logHttp(request, putheader);
 				}				
-
+				/*****************************options response**********************************/
+				if (strstr(request, "OPTIONS") != 0) {
+					ApiRequest_GetOptionsScreen(&client);
+				}
 				/*****************************home page*****************************************/
 				if (strstr(request, "GET / ") != 0) {
 					ApiRequest_GetHomePage(&client);
@@ -578,6 +582,9 @@ void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
 		(*client).println(F("Content-Type: text/cache-manifest"));
 	else
 		(*client).println(F("Content-Type: text/html"));
+	
+	(*client).println(F("Access-Control-Allow-Origin: *"));
+	(*client).println(F("Access-Control-Allow-Headers: PP"));
 	(*client).println(F("Connection: close"));
 	(*client).println();
 }
@@ -610,6 +617,17 @@ void ApiRequest_GetErrorScreen(EthernetClient *client, bool is404, bool isJson)
 		else
 			(*client).println(F("<h2>Access Denied</h2>"));
 	}
+	(*client).println();
+}
+
+void ApiRequest_GetOptionsScreen(EthernetClient *client)
+{
+
+	(*client).println(F("HTTP/1.1 200 OK"));
+	(*client).println(F("Allow: GET, PUT, POST, OPTIONS"));
+	(*client).println(F("Access-Control-Allow-Origin: *"));
+	(*client).println(F("Access-Control-Allow-Headers: PP"));
+	(*client).println(F("Connection: close"));
 	(*client).println();
 }
 
