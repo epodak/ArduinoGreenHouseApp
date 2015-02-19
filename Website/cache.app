@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-# 2015-02-17:v1
+# 2015-02-17:v4
 # make sure you serve this file with "text/cache-manifest" content type
 
 
@@ -20,10 +20,12 @@ http://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-animate.min.js
 http://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.12.0/ui-bootstrap-tpls.min.js
 http://cdnjs.cloudflare.com/ajax/libs/angular-ui-utils/0.1.1/angular-ui-utils.min.js
 http://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js
-#/index.htm
+http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/css/bootstrap-datetimepicker.min.css
+http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js
+# /index.htm
 
 FALLBACK:
-/ /offline.htm
+/ /index.htm
 
 NETWORK:
 *

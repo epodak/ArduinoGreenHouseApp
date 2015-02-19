@@ -68,7 +68,7 @@ datayyMM.jsn //has to be 8.3 format or it will error out! */
 char logFileName[LOGFILENAMELENGTH];
 char* sensorValue;
 char* dateTimeConversionValue;
-const char* day[] = { "NotSet!", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+//const char* day[] = { F("NotSet!"), F("Sun"), F("Mon"), F("Tue"), F("Wed"), F("Thu"), F("Fri"), F("Sat") };
 
 byte lastLogTimeMin; //save minute of the last sensor log
 byte session[7];     //save session start time here
@@ -76,14 +76,14 @@ byte sessionId[2];   //created session ID here
 
 int minMaxRam[2]; //track max and min amout or ram used in program
 
-
+int i; //for loops and general use.
 /*
    0,1,2,3,4 - admin pin
    5 - log internet traffic
    6 - log frequency
    7 - log Ram Usage
    */
-const uint8_t settingsLength = 8;
+const uint8_t settingsLength = 9;
 unsigned char settings[settingsLength];
 
 
@@ -100,8 +100,12 @@ digital from  0   to 1      ??
    should be the length of the largest api call (+1 for string end char \0):
    GET /file/12345678.123 or
    PUT /date or
-   A=pass1&y=15&M=12&d=15&h=23&m=55&s=15&w=2  */
+   y=15&M=12&d=15&h=23&m=55&s=15&w=2  
+   A=pass1&*/
 #define BUFSIZ 30
+char request[BUFSIZ];
+char putheader[BUFSIZ];
+
 /* Our web server will timeout in this many ms */
 //#define TIMEOUTMS 2000
 
@@ -157,9 +161,9 @@ void loop()
 }
 
 void SdInit(){
-	if (!card.init(SDISPEED, outputSdPin)) cryticalError();
-	if (!volume.init(&card)) cryticalError();
-	if (!root.openRoot(&volume)) cryticalError();
+	if (!card.init(SDISPEED, outputSdPin)) cryticalError(1);
+	if (!volume.init(&card)) cryticalError(1);
+	if (!root.openRoot(&volume)) cryticalError(1);
 }
 
 void EthernetInit(){
@@ -177,7 +181,7 @@ void initRamUsage()
 
 void logRamUsage()
 {
-	if (settings[7] == 0) return;
+	if (settings[7] == '0') return;
 	if (FreeRam() > minMaxRam[1]) {
 		minMaxRam[1] = FreeRam();
 	}
@@ -222,13 +226,13 @@ void sessionStart(){
 				fileTo.close();
 			} //end if fileTo.open
 			else{
-				cryticalError();
+				cryticalError(1);
 			}
 		}
 		file.close();
 	} // end if file.open
 	else{
-		cryticalError();
+		cryticalError(1);
 	}
 	/* done copying file */
 
@@ -245,6 +249,14 @@ void sessionTimeStamp(){
 			file.print(sessionId[0], DEC);
 			file.print(sessionId[1], DEC);
 			file.print(F("\", "));
+
+			file.print(F("\"FreeRam\":\" { "));
+			file.print(F("\"From\" :\""));
+			file.print(minMaxRam[0], DEC);
+			file.print(F("\", \"To\" :\""));
+			file.print(minMaxRam[1], DEC);
+			file.print(F("\" }, "));
+
 			file.print(F("\"StartedTime\":\""));
 			printCurrentStringDateToFile(&file, false); //print session start time from session ID
 			file.print(F("\", "));
@@ -256,7 +268,7 @@ void sessionTimeStamp(){
 		file.close();
 	}
 	else{
-		cryticalError();
+		cryticalError(1);
 	}
 }
 
@@ -312,8 +324,9 @@ bool readSettings(){
 		settings[3] = '4';
 		settings[4] = '5';//admin pass
 		settings[5] = '1'; //log internet traffic
-		settings[6] = '1'; //log frequency in minutes ( 0=10min, 1=30min, 2=60min)
+		settings[6] = '2'; //log frequency in minutes ( 0=10min, 1=30min, 2=60min)
 		settings[7] = '1'; //keep log of free ram per session
+		settings[8] = '0'; //Reboot if can not write to SD
 		saveSettings();
 
 	}
@@ -328,7 +341,7 @@ void saveSettings(){
 			int i = 0;
 			logRamUsage();
 			while (i < settingsLength) {
-				file.write(settings[i]);
+				file.write(settings[i]); //write does ascii, while print does byte
 				i++;
 			}
 		}
@@ -336,19 +349,23 @@ void saveSettings(){
 		file.close();
 	}
 	else{
-		cryticalError();
+		cryticalError(1);
 	}
 
 }
 
 bool isPassCorrect(char *pass)
 {
+	//return true;
+	//012345678 Header
+	//PP: 12345
+	//i = 3;
 	if (
-		settings[0] == pass[0] &&
-		settings[1] == pass[1] &&
-		settings[2] == pass[2] &&
-		settings[3] == pass[3] &&
-		settings[4] == pass[4]
+		settings[0] == pass[4] &&
+		settings[1] == pass[5] &&
+		settings[2] == pass[6] &&
+		settings[3] == pass[7] &&
+		settings[4] == pass[8]
 		)
 		return true;
 	else
@@ -414,7 +431,7 @@ void LogSensors()
 		file.close();
 	}
 	else{
-		cryticalError();
+		cryticalError(1);
 	}
 }
 
@@ -427,56 +444,60 @@ EthernetClient client
 
 void checkForApiRequests()
 {
-	char clientline[BUFSIZ];
-	char putargs[BUFSIZ];
-
 	EthernetClient client = server.available();
 	if (client) {
 		while (client.connected()) {
 			if (client.available()) {
 
-				ApiRequest_GetRequestDetails(&client, clientline, putargs);
+				ApiRequest_GetRequestDetails(&client, request, putheader);
 
 				// If settings want us to log http traffic:
 				if (settings[5] == '1') {				
-					logHttp(clientline, putargs);
+					logHttp(request, putheader);
 				}				
 
 				/*****************************home page*****************************************/
-				if (strstr(clientline, "GET / ") != 0) {	
+				if (strstr(request, "GET / ") != 0) {
 					ApiRequest_GetHomePage(&client);
 				}
 				/****************************** manifest file **********************************/
-				else if (strstr(clientline, "GET /cache.appcache") != 0) {
-					ApiRequest_GetIndividualFile(&client, clientline + 5);
+				else if (strstr(request, "GET /cache.app") != 0) {
+					ApiRequest_GetIndividualFile(&client, request + 5);
+				}
+				/****************************** manifest file (ANYONE) *************************/
+				else if (strstr(request, "GET /data") != 0) {
+					/* here you ask for data1501.jsn or data1502.jsn */
+					ApiRequest_GetIndividualFile(&client, request + 5);
 				}
 				/****************************** file content (ADMIN) ***************************/
-				else if (strstr(clientline, "GET /file/") != 0) {
-					ApiRequest_GetIndividualFile(&client, clientline + 10, putargs);
+				else if (strstr(request, "GET /file/") != 0) {
+					ApiRequest_GetIndividualFile(&client, request + 10, putheader);
 				}
 				/***************************** list files  (ADMIN) *****************************/
-				else if (strstr(clientline, "GET /files") != 0) {
-					ApiRequest_GetFileList(&client, putargs);
+				else if (strstr(request, "GET /files") != 0) {
+					ApiRequest_GetFileList(&client, putheader);
 				}
 				/***************************** show clock **************************************/
-				else if (strstr(clientline, "GET /clock") != 0) {
+				else if (strstr(request, "GET /clock") != 0) {
 					ApiRequest_GetDateTime(&client);
 				}
 				/***************************** show ram ****************************************/
-				else if (strstr(clientline, "GET /freeram") != 0) {
+				else if (strstr(request, "GET /freeram") != 0) {
 					ApiRequest_GetRam(&client);
 				}
 				/***************************** update settings  (ADMIN) ************************/
-				else if (strstr(clientline, "PUT /settings") != 0) {
-					ApiRequest_PutSettings(&client, putargs);
+				else if (strstr(request, "PUT /settings") != 0) {
+					//settings?U=111112345
+					ApiRequest_PutSettings(&client, putheader, request + 13);
 				}
 				/***************************** update clock  (ADMIN) ***************************/
-				else if (strstr(clientline, "PUT /clock") != 0) {
-					ApiRequest_PutDateTime(&client, putargs);
+				else if (strstr(request, "PUT /clock") != 0) {
+					//?U=
+					ApiRequest_PutDateTime(&client, putheader, request + 13);
 				}
 				/***************************** reboot  (ADMIN)  ********************************/
-				else if (strstr(clientline, "PUT /reboot") != 0) {
-					ApiRequest_PutReboot(&client, putargs);
+				else if (strstr(request, "PUT /reboot") != 0) {
+					ApiRequest_PutReboot(&client, putheader);
 				}
 
 				/**********************************404******************************************/
@@ -493,13 +514,13 @@ void checkForApiRequests()
 
 }
 
-void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* params)
+void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* putheader)
 {
 	uint8_t index = 0;
 	uint8_t indexargs = 0;
 	bool parametersFound = false;
 	int c = (*client).read();
-	params[0] = c;
+	putheader[0] = c;
 	while (c > -1){
 		// If it isn't a new line, add the character to the buffer
 		if (c != '\n' && c != '\r') {
@@ -511,16 +532,16 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 			}
 			/*---- find post or put arguments --------*/
 			if (!parametersFound){ //look for A=
-				params[0] = params[1];
-				params[1] = c;
-				if (params[0] == 'A' && params[1] == '='){
+				putheader[0] = putheader[1];
+				putheader[1] = c;
+				if (putheader[0] == 'P' && putheader[1] == 'P'){
 					parametersFound = true;
 					indexargs=2;
 				}
 			}
 			else{
 				if (indexargs < BUFSIZ){					
-					params[indexargs] = c;
+					putheader[indexargs] = c;
 					indexargs++;
 				}
 			}
@@ -533,7 +554,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 				index = BUFSIZ + 1;
 			}
 			if (indexargs > 3 && indexargs < BUFSIZ) {
-				params[indexargs] = 0;
+				putheader[indexargs] = 0;
 				indexargs = BUFSIZ + 1;
 			}			
 		}
@@ -542,8 +563,10 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 	}//end while
 	//folowing just prevents any bug if request line is very long 
 	//so we did not have chance to break the line yet:
-	params[BUFSIZ-1] = 0;
-	params[BUFSIZ-1] = 0;
+	putheader[BUFSIZ - 1] = 0;
+	request[BUFSIZ - 1] = 0;
+	//Serial.println(putheader);
+	//Serial.println(request);
 }
 
 void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
@@ -602,17 +625,14 @@ void ApiRequest_GetHomePage(EthernetClient *client)
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, true, false);
-		cryticalError(); ///!!!!!!!!!!!!		
+		cryticalError(1); ///!!!!!!!!!!!!		
 	}
 }
 
-void ApiRequest_GetFileList(EthernetClient *client, char* arguments){
+void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
-	/* in PUT request pass is passed as:
-	01234567
-	A=: 1234
-	*/
-	if (isPassCorrect(&arguments[4]))
+	/* in PUT request pass is passed as header:*/
+	if (isPassCorrect(putheader))
 	{
 		ApiRequest_GetSuccessHeader(client, false);
 		// print all the files, use a helper to keep it clean
@@ -625,13 +645,10 @@ void ApiRequest_GetFileList(EthernetClient *client, char* arguments){
 
 }
 
-void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* arguments)
+void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* putheader)
 {
-	/* in PUT request pass is passed as: 
-	01234567
-	A=: 1234
-	*/
-	if (isPassCorrect(&arguments[4]))
+	/* in PUT request pass is passed as header */
+	if (isPassCorrect(putheader))
 	{
 		// this time no space after the /, so a sub-file!
 		//char *filename;
@@ -660,14 +677,8 @@ void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* 
 }
 
 void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
-{
-	    // turning 'cache.appcache' into 'cache.app' (sd supports only 8.3 file structure)
-		if (strstr(filename, "cache HTTP") != 0){
-			(strstr(filename, "cache HTTP"))[0] = 0;
-		}
-		else{
-			(strstr(filename, " HTTP"))[0] = 0;
-		}
+{	    
+		(strstr(filename, " HTTP"))[0] = 0;		
 
 		if (file.open(&root, filename, O_READ)) {
 			ApiRequest_GetSuccessHeader(client, filename);
@@ -678,7 +689,12 @@ void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
 			file.close();
 		}
 		else{
-			ApiRequest_GetErrorScreen(client, true, false);
+			if (strstr(filename, "data")){
+
+			}
+			else{
+				ApiRequest_GetErrorScreen(client, true, false);
+			}
 		}
 }
 
@@ -702,20 +718,15 @@ void ApiRequest_GetDateTime(EthernetClient *client)
 	/*printCurrentStringDate_Debug(client);*/
 }
 
-void ApiRequest_PutSettings(EthernetClient *client, char* arguments)
+void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* parameters)
 {
-	//012345678901234567 
-	//A=55555&U=55555111
-	if (isPassCorrect(&arguments[2]))
+	//012345678901
+	//?U=123456789
+	if (isPassCorrect(putheader))
 	{
-		settings[0] = arguments[10];
-		settings[1] = arguments[11];
-		settings[2] = arguments[12];
-		settings[3] = arguments[13];
-		settings[4] = arguments[14]; //admin pass
-		settings[5] = arguments[15]; //log internet traffic
-		settings[6] = arguments[16]; //log frequency in minutes
-		settings[7] = arguments[17]; //keep log of free ram per session
+		for (i = 0; i < 9; i++){//settings has 9 fields (1-5 admin + 
+			settings[i] = parameters[i + 3];
+		}
 		saveSettings();
 
 		ApiRequest_GetSuccessHeader(client, ".JSN");
@@ -726,26 +737,27 @@ void ApiRequest_PutSettings(EthernetClient *client, char* arguments)
 	}
 }
 
-void ApiRequest_PutDateTime(EthernetClient *client, char* arguments)
+void ApiRequest_PutDateTime(EthernetClient *client, char* arguments, char* parameters)
 {
 	//          10        20       30         40
 	//01234567890123456789012345678901234567890 
 	//A=55555&D=YYMMDDhhmmssw
-	//A=55555&D=YYMMDDhhmmssw
+	//D=YYMMDDhhmmssw
 
 	//to update clock do:
 	//setDS3231time(15, 2, 10, 23, 43, 10, 3);  //2015-05-22 21:15:30 tuesday
-	if (isPassCorrect(&arguments[2]))
+	if (isPassCorrect(arguments))
 	{
 		/* should we check here if all numbers are between 0 amd 9, otherwise error out? */
+
 		setDS3231time(
-			toDec(arguments[10], arguments[11]), //y
-			toDec(arguments[12], arguments[13]), //m
-			toDec(arguments[14], arguments[15]), //d
-			toDec(arguments[16], arguments[17]), //h
-			toDec(arguments[18], arguments[19]), //m
-			toDec(arguments[20], arguments[21]), //s
-			toDec(arguments[22])                 //w			
+			toDec(parameters[0], parameters[1]), //y
+			toDec(parameters[2], parameters[3]), //m
+			toDec(parameters[4], parameters[5]), //d
+			toDec(parameters[6], parameters[7]), //h
+			toDec(parameters[8], parameters[9]), //m
+			toDec(parameters[10], parameters[11]), //s
+			toDec(parameters[12])                 //w			
 			);
 		ApiRequest_GetSuccessHeader(client, ".JSN");
 		(*client).print(F("{ \"response\":\"Success\", \"newdate\" : \""));
@@ -776,10 +788,12 @@ byte toDec(char A)
 
 void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 {
-	if (isPassCorrect(&arguments[2]))
+	if (isPassCorrect(arguments))
 	{		
 		ApiRequest_GetSuccessHeader(client, ".JSN");
 		(*client).println(F("{ \"response\":\"Success\" }"));
+		delay(1);
+		(*client).stop();
 		resetFunc();
 	}
 	else{
@@ -915,10 +929,10 @@ void printCurrentStringDateToFile(SdFile *file, bool getCurrentTime)
 	if (getCurrentTime){
 		//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 		// retrieve data from DS3231
-		readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
-		// send it to the serial monitor
+		readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);		
 	}
 	else{
+		//get time of the session start
 		year = session[0];
 		month = session[1];
 		dayOfMonth = session[2];
@@ -1006,7 +1020,7 @@ void printCurrentStringDate(EthernetClient *file)
 	}
 	(*file).print(itoa(second, dateTimeConversionValue, DEC));
 	(*file).print(F(" "));
-	(*file).print(day[dayOfWeek]);
+	(*file).print(dayOfWeek);
 
 }
 
@@ -1144,7 +1158,7 @@ void error(char* line){
 	//	file.close();
 	//}
 	//else{
-	//	cryticalError();
+	//	cryticalError(1);
 	//}
 }
 
@@ -1220,16 +1234,14 @@ void log(char* line){
 	}
 }
 
-void cryticalError(){
+void cryticalError(byte Reason){
+	//1 - SD card error - can not open file
 
-
-	resetFunc();  //call reset
+	if (Reason == 1 && settings[8] == '1') //if option to reboot on SD error - then reboot
+	{
+		//Can not write error to any file because this is SD error.... write to eeprom?
+		resetFunc();  //call reset
+	}
 }
 
-//int freeRam()
-//{
-//	extern int __heap_start, *__brkval;
-//	int v;
-//	return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
-//}
 /**************************************************************************/

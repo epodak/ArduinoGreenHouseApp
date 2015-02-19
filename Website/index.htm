@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html manifest="cache.appcache">
+<html manifest="cache.app">
 <head>
   <title>Green House</title>
   <meta charset="utf-8">
@@ -297,7 +297,13 @@
                         <div class="checkbox">
                           <label>
                             <input type="checkbox">
-                            Log RAM usage in log file
+                            Log RAM usage in session log file
+                          </label>
+                        </div>
+                        <div class="checkbox">
+                          <label>
+                            <input type="checkbox">
+                            Reboot if SD not present
                           </label>
                         </div>
                         <div class="checkbox">
@@ -378,7 +384,6 @@
             <tr class="success">
               <td><i class="fa fa-tachometer green"></i> View files (Links) READY</td>
               <td><i class="fa fa-tachometer green"></i> View sessions ADMIN</td>
-              <td><i class="fa fa-tachometer green"></i> Reboot ADMIN </td>
             </tr>
           </tbody>
         </table>
@@ -397,7 +402,7 @@
                   <div class="col-sm-12 text-center">
                     <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"><i class="fa fa-power-off"></i> Reboot</button>
                     <div class="collapse" id="collapseExample">
-                      <div class="well">
+                      <div class="well warning">
                         <div class="row">
                           <div class="col-xs-12">
                             Are you sure?
@@ -407,7 +412,7 @@
                           <div class="col-xs-3">
                           </div>
                           <div class="col-xs-2">
-                            <button type="button" class="btn btn-success btn-lg">No</button>
+                            <button type="button" class="btn btn-success btn-lg" data-target="#collapseExample" data-toggle="collapse">No</button>
                           </div>
                           <div class="col-xs-2">
                           </div>
