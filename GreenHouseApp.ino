@@ -1040,8 +1040,8 @@ void printCurrentStringDate(EthernetClient *file)
 		(*file).print(F("0"));
 	}
 	(*file).print(itoa(second, dateTimeConversionValue, DEC));
-	(*file).print(F(" "));
-	(*file).print(dayOfWeek);
+	// (*file).print(F(" "));
+	// (*file).print(dayOfWeek);
 
 }
 

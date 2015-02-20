@@ -32,6 +32,10 @@
     .red {
       color: #a94442;
     }
+    input.error:focus {
+        box-shadow: 0 0 1px 1px red !important;
+    
+    }
 
     /* page link */
     div[ng-view].ng-enter {
@@ -288,7 +292,7 @@
                   <div class="row" ng-show="loaded">
                     <!-- Log Settings -->
                     <div class="col-sm-4">
-                      <form novalidate class="form">
+                      <form  name="setForm" class="form">
                         <div class="form-group">
                           <label>Change Log Settings</label>
                         </div>
@@ -324,7 +328,7 @@
                             <button type="submit" class="btn btn-primary" ng-disabled="!settingsChanged()" ng-click="saveSettings()">Submit</button>
                           </div>
                           <div class="col-sm-4">
-                            <button type="button" class="btn btn-danger" ng-hide="!settingsChanged()" ng-click="cancelChanges()">Cancel</button>
+                            <button type="button" class="btn btn-danger" ng-hide="!settingsChanged()" ng-click="cancelSettingsChanges()">Cancel</button>
                           </div>
                         </div>
                       </form>
@@ -336,41 +340,86 @@
                           <label>Change Device Time</label>
                         </div>
                         <div class="form-group">
-                          <strong><span class="green">{{time | amDateFormat:'MMMM Do YYYY, h:mm:ss A (dddd)' }} </span></strong>
+                          <strong><span class="green">{{time | amDateFormat:'MMMM Do YYYY, HH:mm:ss (dd)' }} &nbsp;</span></strong>
                         </div>
                         <div class="form-group">
                           <label class="sr-only" for="newDateTime">New Time</label>
                           <div class="input-group" id="dateTmePicker" ui-datepicker ng-model="newDate">
-                            <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" ng-model="newDateInput" />
+                            <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" />
                             <div class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></div>
                           </div>
                         </div>
-                        <div class="row">
+                        <div class="row" style="margin-top: 75px;">
                           <div class="col-sm-4">
                             <button type="submit" class="btn btn-primary" ng-disabled="!newDate" ng-click="saveDate()">Submit</button>
                           </div>
-                          <div class="col-sm-4">
+                          <!--<div class="col-sm-4">
                             <button type="button" class="btn btn-danger" ng-hide="!newDate" ng-click="">Cancel</button>
-                          </div>
+                          </div>-->
                         </div>
                       </form>
                     </div>
                     <!-- Password -->
                     <div class="col-sm-4">
-                      <form class="form">
+                      <form class="form" name="passForm">
                         <div class="form-group">
                           <label>Change your password</label>
                         </div>
-                        <div class="form-group">
-                          <label class="sr-only" for="currentPass">Current Password</label>
-                          <input type="email" class="form-control" id="currentPass" placeholder="Current Password">
+                        <div class="form-group">                          
+                          <input type="hidden" name="pass" ng-model="pass.pass">
+                          <input type="password"
+                                 ng-class="{error: !passForm.currentPass.$valid}"
+                                 name="currentPass"
+                                 class="form-control"
+                                 id="currentPass"
+                                 placeholder="Current Password"
+                                 ng-model="pass.currentPass"
+                                 ng-match="pass.pass"
+                                 ng-required="true">
                         </div>
                         <div class="form-group">
-                          <label class="sr-only" for="newPass">New Password</label>
-                          <input type="password" class="form-control" id="newPass" placeholder="Password">
+                          
+                          <input type="password" 
+                                 ng-class="{error: !passForm.newPass.$valid}" 
+                                 name="newPass" 
+                                 class="form-control" 
+                                 id="newPass" 
+                                 placeholder="Password" 
+                                 ng-model="pass.newPass" 
+                                 ng-required="true" 
+                                 ng-minlength="5">
                         </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
-
+                        <div class="form-group">
+                          
+                          <input type="password" 
+                                 ng-class="{error: !passForm.confirmPass.$valid}" 
+                                 name="confirmPass" 
+                                 class="form-control" 
+                                 id="confirmPass" 
+                                 placeholder="Confirm Password" 
+                                 ng-model="pass.confirmPass" 
+                                 ng-required="true" 
+                                 ng-minlength="5" 
+                                 ng-match="pass.newPass">
+                        </div>
+                        <div class="row" style="margin-top: 0px;">
+                          <div class="col-sm-4">
+                            <button type="submit"
+                                    class="btn btn-primary"
+                                    ng-disabled="!passwordsChanged() || passForm.$invalid"
+                                    ng-click="savePassword()">
+                              Submit
+                            </button>
+                          </div>
+                          <div class="col-sm-4">
+                            <button type="button"
+                                    class="btn btn-danger"
+                                    ng-hide="!passwordsChanged()"
+                                    ng-click="cancelPasswordChanges()">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
                       </form>
                     </div>
                   </div>
@@ -474,7 +523,7 @@
       service("greenApiService", ['$http', '$q', function ($http, $q) {
 
         var host = 'http://miticv.duckdns.org:8080';
-        sessionStorage.setItem('pass', '44444'); //for testing only!!
+        sessionStorage.setItem('pass', '55555'); //for testing only!!
         //#region service
         return ({
 
@@ -556,12 +605,12 @@
         }
         //#endregion
         //#region setTime
-        function setTime(year, month, day, hour, min, sec, week) {
+        function setTime(t) { //year, month, day, hour, min, sec, week
 
           return $http({
             method: "put",
             headers: { 'PP': sessionStorage.getItem('pass') },
-            url: host + '/clock?U=' + year + month + day + hour + min + sec + week
+            url: host + '/clock?U=' + t //year + month + day + hour + min + sec + week
           });
         }
         //#endregion
@@ -607,6 +656,7 @@
 
   </script>
   <script id="admin">
+    var DateFormat = "";
 
     angular.module('greenhouse').
       controller('adminController', ['$scope', 'greenApiService', 'NotifierService', '$q', '$interval', function ($scope, greenApiService, NotifierService, $q, $interval) {
@@ -623,20 +673,33 @@
               { label: '60 min', value: 2 }
           ]
         };
-        $scope.loaded = true;
+        $scope.pass = {
+          pass: sessionStorage.getItem('pass'),
+          currentPass: '',
+          newPass: '',
+          confirmPass: ''
+        };
+
+        $scope.loaded = true; //show alternate screen if API fails to refresh
         $scope.time; //stores moment format of the date on the device
         $scope.stopTime; //used to stop runningTime counter if needed
-        $scope.loading; //used to show loading backdrop
-        $scope.booting; //used to show booting backdrop
+        $scope.loading; //used to show system backdrop
+        $scope.booting; //used to show reboot backdrop
+        $scope.newDate;
 
         //functions:
         $scope.load = load;
-        $scope.runningTime = runningTime;
+        //$scope.runningTime = runningTime;
         $scope.saveSettings = saveSettings;
         $scope.settingsChanged = settingsChanged;
-        $scope.cancelChanges = cancelChanges;
+        $scope.cancelSettingsChanges = cancelSettingsChanges;
 
-        $scope.saveLogSettings = saveLogSettings;
+        $scope.savePassword = savePassword;
+        $scope.passwordsChanged = passwordsChanged;
+        $scope.cancelPasswordChanges = cancelPasswordChanges;
+
+        $scope.saveDate = saveDate;
+
         $scope.reboot = reboot;
 
         $scope.load();
@@ -646,19 +709,30 @@
         function settingsChanged() {
           return !angular.equals($scope.set, originalSettings);
         }
-        function cancelChanges() {
+        function cancelSettingsChanges() {
           $scope.set = angular.copy(originalSettings);
         }
 
+        var originalPasswords = angular.copy($scope.pass);
+        function passwordsChanged() {
+          return !angular.equals($scope.pass, originalPasswords);
+        }
+        function cancelPasswordChanges() {
+          $scope.pass = angular.copy(originalPasswords);
+        }
+
+
         //#region functions
+        //private:
         function runningTime() {
           $scope.time.add(1, 's');
         }
-
+        //public:
         function reboot() {
           $scope.booting = greenApiService.doReboot().then(
             function success(data) {
-              $('#collapseBoot').collapse();
+              $('#collapseBoot').collapse('toggle');
+              NotifierService.info("Device Rebooted!", "Success");
             },
             function error(data) {
               NotifierService.error("could not reboot device.Api failed.", "Error");
@@ -666,10 +740,9 @@
         }
 
         function saveSettings() {
-
+          //build query:
           var settings = sessionStorage.getItem('pass') + ($scope.set.LogHttp ? '1' : '0') + ($scope.set.SensorLogFreq.value) + ($scope.set.LogRAM ? '1' : '0') + ($scope.set.BootNoSD ? '1' : '0');
-          NotifierService.info(settings, "Settings to save");
-          $scope.booting = greenApiService.setSetting(settings).then(
+          $scope.loading = greenApiService.setSettings(settings).then(
             function success(data) {
               originalSettings = angular.copy($scope.set);
               NotifierService.info("Saved.", "Success");
@@ -679,15 +752,35 @@
             });
         }
 
-        function saveLogSettings() {
-
-          $scope.booting = greenApiService.setSettings().then(
+        function saveDate() {
+          //build query:
+          var time = moment($scope.newDate, 'MMMM Do YYYY, HH:mm:ss (dd)');
+          var arg = time.format("YYMMDDHHmmss") + (1 + parseInt(time.format("e"))); //device count from Sun, moment count from Mon fix          
+          $scope.loading = greenApiService.setTime(arg).then(
             function success(data) {
-              $('#collapseBoot').collapse();
+              $scope.time = moment(data.data.newdate, "YYYY-MM-DD HH:mm:ss");
+              NotifierService.info("Saved.", "Success");
             },
             function error(data) {
-              NotifierService.error("could not reboot device.Api failed.", "Error");
+              NotifierService.error("could not save time. Api failed.", "Error");
             });
+        }
+
+        function savePassword() {
+          //build query:
+          var settings = $scope.pass.newPass.substring(0,5) + (originalSettings.LogHttp ? '1' : '0') + (originalSettings.SensorLogFreq.value) + (originalSettings.LogRAM ? '1' : '0') + (originalSettings.BootNoSD ? '1' : '0');
+          $scope.loading = greenApiService.setSettings(settings).then(
+            function success(data) {
+              sessionStorage.setItem('pass', $scope.pass.newPass.substring(0, 5));
+              $scope.pass = angular.copy(originalPasswords);
+              $scope.pass.pass = sessionStorage.getItem('pass');
+              originalPasswords = angular.copy($scope.pass);
+              NotifierService.info("Saved.", "Success");
+            },
+            function error(data) {
+              NotifierService.error("could not save password. Api failed.", "Error");
+            });
+          
         }
 
         // sequential calls both calls at the same time, and one fails (Arduino can not multi task)
@@ -697,18 +790,18 @@
           $scope.loading = greenApiService.getSettings().then(
             function success(data) {
               var settings = data.data;
-              sessionStorage.setItem('pass', settings.substring(0, 4)); //make user pass is current!
-              $scope.set.LogHttp = settings.substring(4, 5) === '1';
-              $scope.set.SensorLogFreq = $scope.set.sensorFreqOptions[settings.substring(5, 6)];
-              $scope.set.LogRAM = settings.substring(6, 7) === '1';
-              $scope.set.BootNoSD = settings.substring(7, 8) === '1';
+              sessionStorage.setItem('pass', settings.substring(0, 5)); //make user pass is current!
+              $scope.set.LogHttp = settings.substring(5, 6) === '1';
+              $scope.set.SensorLogFreq = $scope.set.sensorFreqOptions[settings.substring(6, 7)];
+              $scope.set.LogRAM = settings.substring(7, 8) === '1';
+              $scope.set.BootNoSD = settings.substring(8, 9) === '1';
               originalSettings = angular.copy($scope.set);
 
               return greenApiService.getTime().then(
                     function success(data) {
-                      //2015-02-19 12:20:13 3  (1=sunday, 2=monday.... 7-sat)
-                      $scope.time = moment(data.data.datetime, "YYYY-MM-DD HH:mm:ss e");
-                      $scope.stopTime = $interval($scope.runningTime, 1000);
+                      //2015-02-19 12:20:13 3  (1=sunday, 2=monday.... 7-sat) (do not parse e(day of the week) not needed)
+                      $scope.time = moment(data.data.datetime, "YYYY-MM-DD HH:mm:ss");
+                      $scope.stopTime = $interval(runningTime, 1000);
                     },
                     function error(e) {
                       NotifierService.error("Can not load time.", "Error");
@@ -736,7 +829,9 @@
           $(el).datetimepicker({
             sideBySide: true,
             showTodayButton: true,
-            useCurrent: true
+            useCurrent: true,
+            showClear: true,
+            format: 'MMMM Do YYYY, HH:mm:ss (dd)'
           });
           input.on('blur keyup change', function () {
             ngModel.$setViewValue(input.val());
@@ -750,7 +845,37 @@
           scope: { ngModel: '=' },
           link: link
         };
-      });
+      }).
+    directive('ngMatch', ['$parse', function ngMatchDirective($parse) {
+      'use strict';
+    
+      function link(scope, elem, attrs, ctrl) {
+        // if ngModel is not defined, we don't need to do anything
+        if (!ctrl) return;
+        if (!attrs['ngMatch']) return;
+
+        var valueToMatch = $parse(attrs['ngMatch']);
+
+        var validator = function (value) {
+          var temp = valueToMatch(scope),
+              v = value === temp;
+          ctrl.$setValidity('match', v);
+          return value;
+        }
+
+        ctrl.$parsers.unshift(validator);
+        ctrl.$formatters.push(validator);
+        attrs.$observe('ngMatch', function () {
+          validator(ctrl.$viewValue);
+        });
+
+      };
+        return {
+          restrict: 'A',
+          require: '?ngModel',
+          link: link
+        };
+    }]);
 
   </script>
 
