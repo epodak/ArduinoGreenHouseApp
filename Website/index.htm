@@ -1,537 +1,527 @@
 ﻿<!DOCTYPE html>
-<html>
-<!--manifest="cache.app"-->
-<head>
-  <title>Green House</title>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/css/toastr.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/css/bootstrap-datetimepicker.min.css" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.css" />
+<html manifest ="cache.app">
+  <!---->
+  <head>
+    <title>Green House</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/css/toastr.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/css/bootstrap-datetimepicker.min.css" />
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.css" />
 
-  <style type="text/css">
-    /*body {
-        padding-top: 80px;
-      }*/
-    ul > li > a.navlink {
-      padding: 7px;
-    }
+    <style type="text/css">
+      .green {
+        color: green;
+      }
 
-    .green {
-      color: green;
-    }
+      .yellow {
+        color: yellow;
+      }
 
-    .yellow {
-      color: yellow;
-    }
+      .red {
+        color: #a94442;
+      }
 
-    .red {
-      color: #a94442;
-    }
-    input.error:focus {
+      input.error:focus {
         box-shadow: 0 0 1px 1px red !important;
-    
-    }
+      }
 
-    /* page link */
-    div[ng-view].ng-enter {
-      -webkit-animation: fadeInRight 0.5s;
-      animation: fadeInRight 0.5s;
-    }
+      /* page link */
+      div[ng-view].ng-enter {
+        -webkit-animation: fadeInRight 0.5s;
+        animation: fadeInRight 0.5s;
+      }
 
-    /* ng-hide and ng-show */
-    .ng-hide-remove {
-      -webkit-animation: fadeIn 0.5s;
-      animation: fadeIn 0.5s;
-    }
+      /* ng-hide and ng-show */
+      .ng-hide-remove {
+        -webkit-animation: fadeIn 0.5s;
+        animation: fadeIn 0.5s;
+      }
 
-    .ng-hide-add {
-      -webkit-animation: fadeOut 0.5s;
-      animation: fadeOut 0.5s;
-      display: block !important;
-    }
-  </style>
-</head>
-<body>
+      .ng-hide-add {
+        -webkit-animation: fadeOut 0.5s;
+        animation: fadeOut 0.5s;
+        display: block !important;
+      }
+    </style>
+  </head>
+  <body>
 
-  <div>
+    <div>
 
-    <div data-ng-include="'header.html'"></div>
+      <div data-ng-include="'header.html'"></div>
 
-    <div class="container body-content ui-view-container" role="main" style="margin-bottom:50px;">
-      <div ng-view data-ng-view-animate="zoomIn"></div>
+      <div class="container body-content ui-view-container" role="main" style="margin-bottom:50px;">
+        <div ng-view data-ng-view-animate="zoomIn"></div>
+      </div>
+
     </div>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/js/toastr.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+    <!--<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.3.0/bootbox.min.js"></script>-->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-sanitize.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular-route.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-animate.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.12.0/ui-bootstrap-tpls.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-utils/0.1.1/angular-ui-utils.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
 
-  </div>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/js/toastr.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.3.0/bootbox.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-sanitize.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular-route.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-animate.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.12.0/ui-bootstrap-tpls.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-utils/0.1.1/angular-ui-utils.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
+    <script type="text/ng-template" id="header.html">
+      <nav class="navbar navbar-default text-center">
+        <div class="container">
 
-  <script type="text/ng-template" id="header.html">
-    <nav class="navbar navbar-default text-center">
-      <div class="container">
+          <div class="navbar-header text-center">
+            <a class="navbar-brand" href="/#/"><i class="fa fa-leaf green"></i> Green House</a>
+          </div>
 
-        <div class="navbar-header text-center">
-          <a class="navbar-brand" href="/#/"><i class="fa fa-leaf green"></i> Green House</a>
+          <ul class="nav navbar-nav navbar-right">
+            <li><a ng-hide="layout.isLoggedIn" href="/#/login"><i class="fa fa-wrench"></i> admin</a></li>
+          </ul>
+        </div>   <!-- /.container-fluid -->
+      </nav>
+    </script>
+
+    <script type="text/ng-template" id="home.html">
+
+      <div class="row">
+        <div class="col-sm-6 table-responsive">
+          <table class="table">
+            <caption>User Options</caption>
+            <tbody>
+              <tr class="success">
+                <td>
+
+                  <i class="fa fa-refresh fa-lg green" style="position:relative;top:10px; "></i>
+                  <span>2015 May 22 13:32:15</span><br />
+                  <small style="margin-left:20px;">Click to refresh new data</small>
+
+                </td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <span type="button" class="btn btn-primary active">C&deg;</span>
+                    <span type="button" class="btn btn-default">F&deg;</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div><!-- /.col-sm-6 -->
+        <div class="col-sm-6 table-responsive">
+          <table class="table">
+            <caption>System statistics</caption>
+            <tbody>
+              <tr class="success">
+                <td><i class="fa fa-heartbeat green"></i> System running for <span>4 days</span> since last reboot </td>
+              </tr>
+              <tr class="success">
+                <td><i class="fa fa-tachometer green"></i> System is healthy with <span>417</span>b or Free RAM</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <ul class="nav navbar-nav navbar-right">
-          <li><a ng-hide="layout.isLoggedIn" href="/#/admin"><i class="fa fa-wrench"></i> admin</a></li>
-        </ul>
-      </div>   <!-- /.container-fluid -->
-    </nav>
-  </script>
-
-  <script type="text/ng-template" id="home.html">
-
-    <div class="row">
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>User Options</caption>
-          <tbody>
-            <tr class="success">
-              <td>
-
-                <i class="fa fa-refresh fa-lg green" style="position:relative;top:10px; "></i>
-                <span>2015 May 22 13:32:15</span><br />
-                <small style="margin-left:20px;">Click to refresh new data</small>
-
-              </td>
-              <td>
-                <div class="btn-group" role="group">
-                  <span type="button" class="btn btn-primary active">C&deg;</span>
-                  <span type="button" class="btn btn-default">F&deg;</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div><!-- /.col-sm-6 -->
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>System statistics</caption>
-          <tbody>
-            <tr class="success">
-              <td><i class="fa fa-heartbeat green"></i> System running for <span>4 days</span> since last reboot </td>
-            </tr>
-            <tr class="success">
-              <td><i class="fa fa-tachometer green"></i> System is healthy with <span>417</span>b or Free RAM</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
-    </div>
 
-    <div class="row">
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>Air statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Air</td><td> Out</td><td>In</td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>Temperature</td><td><span class="badge">10 C&deg;</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
-            <tr class="success"><td>Humidity</td><td> <span class="badge">80 &#37;</span></td><td><span class="badge">80 &#37;</span></td></tr>
-            <tr class="success"><td>Heat Index</td><td> <span class="badge">32 </span></td><td><span class="badge">32 </span></td></tr>
-            <tr class="success"><td>Light</td><td> <span class="badge">780 lux</span></td><td><span class="badge">780 lux</span></td></tr>
-          </tbody>
-        </table>
-      </div><!-- /.col-sm-6 -->
-      <div class="col-sm-6  table-responsive">
-        <table class="table">
-          <caption>Water Statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Water</td><td></td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>Pool Level</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Top Temperature</td><td><span class="badge">12 C&deg;</span></td></tr>
-            <tr class="success"><td>Bottom Temperature</td><td><span class="badge">12 C&deg; </span></td></tr>
-            <tr class="success"><td>Pump Running</td><td><i class="fa fa-cog fa-spin fa-lg green"></i></td></tr>
-          </tbody>
-        </table>
+      <div class="row">
+        <div class="col-sm-6 table-responsive">
+          <table class="table">
+            <caption>Air statistics</caption>
+            <thead>
+              <tr class="bg-primary"><td>Air</td><td> Out</td><td>In</td></tr>
+            </thead>
+            <tbody>
+              <tr class="success"><td>Temperature</td><td><span class="badge">10 C&deg;</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+              <tr class="success"><td>Humidity</td><td> <span class="badge">80 &#37;</span></td><td><span class="badge">80 &#37;</span></td></tr>
+              <tr class="success"><td>Heat Index</td><td> <span class="badge">32 </span></td><td><span class="badge">32 </span></td></tr>
+              <tr class="success"><td>Light</td><td> <span class="badge">780 lux</span></td><td><span class="badge">780 lux</span></td></tr>
+            </tbody>
+          </table>
+        </div><!-- /.col-sm-6 -->
+        <div class="col-sm-6  table-responsive">
+          <table class="table">
+            <caption>Water Statistics</caption>
+            <thead>
+              <tr class="bg-primary"><td>Water</td><td></td></tr>
+            </thead>
+            <tbody>
+              <tr class="success"><td>Pool Level</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Top Temperature</td><td><span class="badge">12 C&deg;</span></td></tr>
+              <tr class="success"><td>Bottom Temperature</td><td><span class="badge">12 C&deg; </span></td></tr>
+              <tr class="success"><td>Pump Running</td><td><i class="fa fa-cog fa-spin fa-lg green"></i></td></tr>
+            </tbody>
+          </table>
 
-      </div><!-- /.col-sm-6 -->
-    </div><!--/row-->
+        </div><!-- /.col-sm-6 -->
+      </div><!--/row-->
 
-    <div class="row">
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>Bed statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Bed</td><td> Level</td><td></td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>BED A</td><td><span class="badge">1</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
-            <tr class="success"><td>BED B</td><td><span class="badge">1</span></td><td><span class="badge">80 &#37;</span></td></tr>
-            <tr class="success"><td>BED C</td><td><span class="badge">1 </span></td><td><span class="badge">32 </span></td></tr>
-            <tr class="success"><td>BED D</td><td><span class="badge">1</span></td><td><span class="badge">780 lux</span></td></tr>
-            <tr class="success"><td>BED A</td><td><span class="badge">2</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
-            <tr class="success"><td>BED B</td><td><span class="badge">2</span></td><td><span class="badge">80 &#37;</span></td></tr>
-            <tr class="success"><td>BED C</td><td><span class="badge">2</span></td><td><span class="badge">32 </span></td></tr>
-            <tr class="success"><td>BED D</td><td><span class="badge">2</span></td><td><span class="badge">780 lux</span></td></tr>
-          </tbody>
-        </table>
-      </div><!-- /.col-sm-6 -->
-      <div class="col-sm-6  table-responsive">
-        <table class="table">
-          <caption>Tower Statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Tower</td><td></td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>Tower 1</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 2</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 3</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 4</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 5</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 6</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 7</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 8</td><td><span class="badge">5 m</span></td></tr>
+      <div class="row">
+        <div class="col-sm-6 table-responsive">
+          <table class="table">
+            <caption>Bed statistics</caption>
+            <thead>
+              <tr class="bg-primary"><td>Bed</td><td> Level</td><td></td></tr>
+            </thead>
+            <tbody>
+              <tr class="success"><td>BED A</td><td><span class="badge">1</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+              <tr class="success"><td>BED B</td><td><span class="badge">1</span></td><td><span class="badge">80 &#37;</span></td></tr>
+              <tr class="success"><td>BED C</td><td><span class="badge">1 </span></td><td><span class="badge">32 </span></td></tr>
+              <tr class="success"><td>BED D</td><td><span class="badge">1</span></td><td><span class="badge">780 lux</span></td></tr>
+              <tr class="success"><td>BED A</td><td><span class="badge">2</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+              <tr class="success"><td>BED B</td><td><span class="badge">2</span></td><td><span class="badge">80 &#37;</span></td></tr>
+              <tr class="success"><td>BED C</td><td><span class="badge">2</span></td><td><span class="badge">32 </span></td></tr>
+              <tr class="success"><td>BED D</td><td><span class="badge">2</span></td><td><span class="badge">780 lux</span></td></tr>
+            </tbody>
+          </table>
+        </div><!-- /.col-sm-6 -->
+        <div class="col-sm-6  table-responsive">
+          <table class="table">
+            <caption>Tower Statistics</caption>
+            <thead>
+              <tr class="bg-primary"><td>Tower</td><td></td></tr>
+            </thead>
+            <tbody>
+              <tr class="success"><td>Tower 1</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Tower 2</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Tower 3</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Tower 4</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Tower 5</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Tower 6</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Tower 7</td><td><span class="badge">5 m</span></td></tr>
+              <tr class="success"><td>Tower 8</td><td><span class="badge">5 m</span></td></tr>
 
-          </tbody>
-        </table>
+            </tbody>
+          </table>
 
-      </div><!-- /.col-sm-6 -->
-    </div><!--/row-->
+        </div><!-- /.col-sm-6 -->
+      </div><!--/row-->
 
-  </script>
+    </script>
 
-  <script type="text/ng-template" id="login.html">
+    <script type="text/ng-template" id="login.html">
 
-    <div class="row">
-      <div class="col-sm-12">
+      <div class="row">
+        <div class="col-sm-12">
 
-        <table class="table">
-          <caption> Enter Credentials</caption>
-          <tbody>
-            <tr class="success">
-              <td>
-                <form class="form">
-                  <div class="form-group">
-                    <label class="sr-only" for="user">Username</label>
-                    <input type="username" class="form-control" id="user" placeholder="Username">
+          <table class="table">
+            <caption> Enter Credentials</caption>
+            <tbody>
+              <tr class="success">
+                <td>
+                  <div cg-busy="loading">
+                    <form class="form">
+                      <div class="form-group">
+                        <label class="sr-only" for="pass">Password</label>
+                        <input type="password" class="form-control" id="pass" placeholder="Password" ng-model="loginpass">
+                      </div>
+                      <div class="row">
+                        <div class="col-sm-4">
+                          <button type="submit" class="btn btn-primary" ng-click="login()" ng-disabled="loginpass==''">Login</button>
+                        </div>
+                        <div class="col-sm-4">
+                          <button type="button" class="btn btn-danger" ng-click="loginpass=''" ng-hide="loginpass==''">Cancel</button>
+                        </div>
+                      </div>
+                    </form>
                   </div>
-                  <div class="form-group">
-                    <label class="sr-only" for="pass">Password</label>
-                    <input type="password" class="form-control" id="pass" placeholder="Password">
-                  </div>
-                  <div class="form-group">
-                    <div class="">
-                      <button type="submit" class="btn btn-primary">Login</button>
-                    </div>
-                  </div>
-                </form>
-              </td>
-            </tr>
+                </td>
+              </tr>
 
-          </tbody>
-        </table>
+            </tbody>
+          </table>
 
+        </div>
       </div>
-    </div>
 
-  </script>
+    </script>
 
-  <script type="text/ng-template" id="admin.html">
+    <script type="text/ng-template" id="admin.html">
 
-    <!-- System status -->
-    <div class="row">
-      <div class="col-sm-12">
-        <table class="table">
-          <caption> System status</caption>
-          <tbody>
-            <tr>
-              <td class="success">
+      <!-- System status -->
+      <div class="row">
+        <div class="col-sm-12">
+          <table class="table">
+            <caption> System status</caption>
+            <tbody>
+              <tr>
+                <td class="success">
 
-                <div class="row">
-                  <div class="col-sm-4">
-                    <i class="fa fa-rocket green fa-lg"></i> System running for <strong><span class="green">4 days</span></strong> since last reboot
-                  </div>
-                  <div class="col-sm-4">
-                    <i class="fa fa-bar-chart green fa-lg"></i> System is healthy with <strong><span class="green">417b</span></strong> to <strong><span class="green">513b</span></strong> of Free RAM
-                  </div>
-                  <div class="col-sm-4">
-                    <i class="fa fa-recycle green fa-lg"></i> System has been booted <strong><span class="green">51</span></strong> times since <span class="green">Feb 5 2015</span>
-                  </div>
-                </div>
-
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!--Change Settings-->
-    <div class="row">
-      <div class="col-sm-12">
-
-        <table class="table">
-          <caption> System Settings</caption>
-          <tbody>
-            <tr class="success">
-              <td>
-                <div cg-busy="loading">
-                  <div class="row" ng-show="loaded">
-                    <!-- Log Settings -->
+                  <div class="row">
                     <div class="col-sm-4">
-                      <form  name="setForm" class="form">
-                        <div class="form-group">
-                          <label>Change Log Settings</label>
-                        </div>
-                        <div class="form-group">
-                          <div class="checkbox">
-                            <label>
-                              <input type="checkbox" ng-model="set.LogHttp">
-                              Log http request in log file
-                            </label>
-                          </div>
-                          <div class="checkbox">
-                            <label>
-                              <input type="checkbox" ng-model="set.LogRAM">
-                              Log RAM usage in session log file
-                            </label>
-                          </div>
-                          <div class="checkbox">
-                            <label>
-                              <input type="checkbox" ng-model="set.BootNoSD">
-                              Reboot if SD not present
-                            </label>
-                          </div>
-                          <div class="checkbox">
-                            <label>
-                              Set Sensor log frequency:
-                              <select class="form-control" ng-model="set.SensorLogFreq"
-                                      ng-options="opt as opt.label for opt in set.sensorFreqOptions"></select>
-                            </label>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <div class="col-sm-4">
-                            <button type="submit" class="btn btn-primary" ng-disabled="!settingsChanged()" ng-click="saveSettings()">Submit</button>
-                          </div>
-                          <div class="col-sm-4">
-                            <button type="button" class="btn btn-danger" ng-hide="!settingsChanged()" ng-click="cancelSettingsChanges()">Cancel</button>
-                          </div>
-                        </div>
-                      </form>
+                      <i class="fa fa-rocket green fa-lg"></i> System running for <strong><span class="green">4 days</span></strong> since last reboot
                     </div>
-                    <!-- Date Time -->
                     <div class="col-sm-4">
-                      <form class="form">
-                        <div class="form-group">
-                          <label>Change Device Time</label>
-                        </div>
-                        <div class="form-group">
-                          <strong><span class="green">{{time | amDateFormat:'MMMM Do YYYY, HH:mm:ss (dd)' }} &nbsp;</span></strong>
-                        </div>
-                        <div class="form-group">
-                          <label class="sr-only" for="newDateTime">New Time</label>
-                          <div class="input-group" id="dateTmePicker" ui-datepicker ng-model="newDate">
-                            <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" />
-                            <div class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></div>
-                          </div>
-                        </div>
-                        <div class="row" style="margin-top: 75px;">
-                          <div class="col-sm-4">
-                            <button type="submit" class="btn btn-primary" ng-disabled="!newDate" ng-click="saveDate()">Submit</button>
-                          </div>
-                          <!--<div class="col-sm-4">
-                            <button type="button" class="btn btn-danger" ng-hide="!newDate" ng-click="">Cancel</button>
-                          </div>-->
-                        </div>
-                      </form>
+                      <i class="fa fa-bar-chart green fa-lg"></i> System is healthy with <strong><span class="green">417b</span></strong> to <strong><span class="green">513b</span></strong> of Free RAM
                     </div>
-                    <!-- Password -->
-                    <div class="col-sm-4">
-                      <form class="form" name="passForm">
-                        <div class="form-group">
-                          <label>Change your password</label>
-                        </div>
-                        <div class="form-group">                          
-                          <input type="hidden" name="pass" ng-model="pass.pass">
-                          <input type="password"
-                                 ng-class="{error: !passForm.currentPass.$valid}"
-                                 name="currentPass"
-                                 class="form-control"
-                                 id="currentPass"
-                                 placeholder="Current Password"
-                                 ng-model="pass.currentPass"
-                                 ng-match="pass.pass"
-                                 ng-required="true">
-                        </div>
-                        <div class="form-group">
-                          
-                          <input type="password" 
-                                 ng-class="{error: !passForm.newPass.$valid}" 
-                                 name="newPass" 
-                                 class="form-control" 
-                                 id="newPass" 
-                                 placeholder="Password" 
-                                 ng-model="pass.newPass" 
-                                 ng-required="true" 
-                                 ng-minlength="5">
-                        </div>
-                        <div class="form-group">
-                          
-                          <input type="password" 
-                                 ng-class="{error: !passForm.confirmPass.$valid}" 
-                                 name="confirmPass" 
-                                 class="form-control" 
-                                 id="confirmPass" 
-                                 placeholder="Confirm Password" 
-                                 ng-model="pass.confirmPass" 
-                                 ng-required="true" 
-                                 ng-minlength="5" 
-                                 ng-match="pass.newPass">
-                        </div>
-                        <div class="row" style="margin-top: 0px;">
-                          <div class="col-sm-4">
-                            <button type="submit"
-                                    class="btn btn-primary"
-                                    ng-disabled="!passwordsChanged() || passForm.$invalid"
-                                    ng-click="savePassword()">
-                              Submit
-                            </button>
-                          </div>
-                          <div class="col-sm-4">
-                            <button type="button"
-                                    class="btn btn-danger"
-                                    ng-hide="!passwordsChanged()"
-                                    ng-click="cancelPasswordChanges()">
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      </form>
+                    <div class="col-sm-4" ng-click="logOut()">
+                      <!--<i class="fa fa-recycle green fa-lg"></i> System has been booted <strong><span class="green">51</span></strong> times since <span class="green">Feb 5 2015</span>-->
+                      <button type="button" class="btn btn-primary btn-xs" ng-click="logOut()">Log Out</button>
                     </div>
                   </div>
-                </div>
-                <div class="row" ng-hide="loaded">
-                  <div class="col-sm-12">
-                    Could not load settings. Please <a href="" ng-click="load()">refresh</a>
-                  </div>
-                </div>
-              </td>
-            </tr>
 
-
-            <!--<tr class="TO TO">
-              <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
-              <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
-              <td><i class="fa fa-tachometer green"></i> Send Email</td>
-              <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
-              <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
-            </tr>-->
-          </tbody>
-        </table>
-
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
-    <!--Maintenance-->
-    <div class="row">
-      <div class="col-sm-12">
-        <table class="table">
-          <caption> Maintenance</caption>
-          <tbody>
-            <tr class="success">
-              <td><i class="fa fa-tachometer green"></i> View files (Links) READY</td>
-              <td><i class="fa fa-tachometer green"></i> View sessions ADMIN</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <!--Change Settings-->
+      <div class="row">
+        <div class="col-sm-12">
 
-    <!--Reboot-->
-    <div class="row">
-      <div class="col-sm-12">
-        <table class="table">
-          <caption> Reboot Device</caption>
-          <tbody>
-            <tr class="success">
-              <td>
-                <div cg-busy="booting">
-                  <div class=" row">
-                    <div class="col-sm-12 text-center">
-                      <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#collapseBoot" aria-expanded="false" aria-controls="collapseBoot"><i class="fa fa-power-off"></i> Reboot</button>
-                      <div class="collapse" id="collapseBoot">
-                        <div class="well warning">
-                          <div class="row">
-                            <div class="col-xs-12">
-                              Are you sure?
+          <table class="table">
+            <caption> System Settings</caption>
+            <tbody>
+              <tr class="success">
+                <td>
+                  <div cg-busy="loading">
+                    <div class="row" ng-show="loaded">
+                      <!-- Log Settings -->
+                      <div class="col-sm-4">
+                        <form name="setForm" class="form">
+                          <div class="form-group">
+                            <label>Change Log Settings</label>
+                          </div>
+                          <div class="form-group">
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" ng-model="set.LogHttp">
+                                Log http request in log file
+                              </label>
+                            </div>
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" ng-model="set.LogRAM">
+                                Log RAM usage in session log file
+                              </label>
+                            </div>
+                            <div class="checkbox">
+                              <label>
+                                <input type="checkbox" ng-model="set.BootNoSD">
+                                Reboot if SD not present
+                              </label>
+                            </div>
+                            <div class="checkbox">
+                              <label>
+                                Set Sensor log frequency:
+                                <select class="form-control" ng-model="set.SensorLogFreq"
+                                        ng-options="opt as opt.label for opt in set.sensorFreqOptions"></select>
+                              </label>
                             </div>
                           </div>
                           <div class="row">
-                            <div class="col-xs-3">
+                            <div class="col-sm-4">
+                              <button type="submit" class="btn btn-primary" ng-disabled="!settingsChanged()" ng-click="saveSettings()">Submit</button>
                             </div>
-                            <div class="col-xs-2">
-                              <button type="button" class="btn btn-success btn-lg" data-target="#collapseBoot" data-toggle="collapse">No</button>
+                            <div class="col-sm-4">
+                              <button type="button" class="btn btn-danger" ng-hide="!settingsChanged()" ng-click="cancelSettingsChanges()">Cancel</button>
                             </div>
-                            <div class="col-xs-2">
+                          </div>
+                        </form>
+                      </div>
+                      <!-- Date Time -->
+                      <div class="col-sm-4">
+                        <form class="form">
+                          <div class="form-group">
+                            <label>Change Device Time</label>
+                          </div>
+                          <div class="form-group">
+                            <strong><span class="green">{{time | amDateFormat:'MMMM Do YYYY, HH:mm:ss (dd)' }} &nbsp;</span></strong>
+                          </div>
+                          <div class="form-group">
+                            <label class="sr-only" for="newDateTime">New Time</label>
+                            <div class="input-group" id="dateTmePicker" ui-datepicker ng-model="newDate">
+                              <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" />
+                              <div class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></div>
                             </div>
-                            <div class="col-xs-2">
-                              <button type="button" class="btn btn-danger btn-lg" ng-click="reboot()">Yes</button>
+                          </div>
+                          <div class="row" style="margin-top: 75px;">
+                            <div class="col-sm-4">
+                              <button type="submit" class="btn btn-primary" ng-disabled="!newDate" ng-click="saveDate()">Submit</button>
                             </div>
-                            <div class="col-xs-3">
+                            <!--<div class="col-sm-4">
+                              <button type="button" class="btn btn-danger" ng-hide="!newDate" ng-click="">Cancel</button>
+                            </div>-->
+                          </div>
+                        </form>
+                      </div>
+                      <!-- Password -->
+                      <div class="col-sm-4">
+                        <form class="form" name="passForm">
+                          <div class="form-group">
+                            <label>Change your password</label>
+                          </div>
+                          <div class="form-group">
+                            <input type="hidden" name="pass" ng-model="pass.pass">
+                            <input type="password"
+                                   ng-class="{error: !passForm.currentPass.$valid}"
+                                   name="currentPass"
+                                   class="form-control"
+                                   id="currentPass"
+                                   placeholder="Current Password"
+                                   ng-model="pass.currentPass"
+                                   ng-match="pass.pass"
+                                   ng-required="true">
+                          </div>
+                          <div class="form-group">
+
+                            <input type="password"
+                                   ng-class="{error: !passForm.newPass.$valid}"
+                                   name="newPass"
+                                   class="form-control"
+                                   id="newPass"
+                                   placeholder="Password"
+                                   ng-model="pass.newPass"
+                                   ng-required="true"
+                                   ng-minlength="5">
+                          </div>
+                          <div class="form-group">
+
+                            <input type="password"
+                                   ng-class="{error: !passForm.confirmPass.$valid}"
+                                   name="confirmPass"
+                                   class="form-control"
+                                   id="confirmPass"
+                                   placeholder="Confirm Password"
+                                   ng-model="pass.confirmPass"
+                                   ng-required="true"
+                                   ng-minlength="5"
+                                   ng-match="pass.newPass">
+                          </div>
+                          <div class="row" style="margin-top: 0px;">
+                            <div class="col-sm-4">
+                              <button type="submit"
+                                      class="btn btn-primary"
+                                      ng-disabled="!passwordsChanged() || passForm.$invalid"
+                                      ng-click="savePassword()">
+                                Submit
+                              </button>
                             </div>
-                            </row>
+                            <div class="col-sm-4">
+                              <button type="button"
+                                      class="btn btn-danger"
+                                      ng-hide="!passwordsChanged()"
+                                      ng-click="cancelPasswordChanges()">
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row" ng-hide="loaded">
+                    <div class="col-sm-12">
+                      Could not load settings. Please <a href="" ng-click="load()">refresh</a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+
+              <!--<tr class="TO TO">
+                <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
+                <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
+                <td><i class="fa fa-tachometer green"></i> Send Email</td>
+                <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
+                <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
+              </tr>-->
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+
+      <!--Maintenance-->
+      <div class="row">
+        <div class="col-sm-12">
+          <table class="table">
+            <caption> Maintenance</caption>
+            <tbody>
+              <tr class="success">
+                <td><i class="fa fa-tachometer green"></i> View files (Links) READY</td>
+                <td><i class="fa fa-tachometer green"></i> View sessions ADMIN</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!--Reboot-->
+      <div class="row">
+        <div class="col-sm-12">
+          <table class="table">
+            <caption> Reboot Device</caption>
+            <tbody>
+              <tr class="success">
+                <td>
+                  <div cg-busy="booting">
+                    <div class=" row">
+                      <div class="col-sm-12 text-center">
+                        <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#collapseBoot" aria-expanded="false" aria-controls="collapseBoot"><i class="fa fa-power-off"></i> Reboot</button>
+                        <div class="collapse" id="collapseBoot">
+                          <div class="well warning">
+                            <div class="row">
+                              <div class="col-xs-12">
+                                Are you sure?
+                              </div>
+                            </div>
+                            <div class="row">
+                              <div class="col-xs-3">
+                              </div>
+                              <div class="col-xs-2">
+                                <button type="button" class="btn btn-success btn-lg" data-target="#collapseBoot" data-toggle="collapse">No</button>
+                              </div>
+                              <div class="col-xs-2">
+                              </div>
+                              <div class="col-xs-2">
+                                <button type="button" class="btn btn-danger btn-lg" ng-click="reboot()">Yes</button>
+                              </div>
+                              <div class="col-xs-3">
+                              </div>
+                              </row>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  </script>
+    </script>
 
-  <script id="routing">
-    angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy', 'angularMoment']).
-      config(['$routeProvider', function ($routeProvider) {
-        $routeProvider.
-         when("/", { templateUrl: "home.html", controller: "homeController" }).
-         when("/admin", { templateUrl: "admin.html", controller: "adminController" }).
-         when("/login", { templateUrl: "login.html", controller: "loginController" }).
-         otherwise({ redirectTo: '/' });
+    <script id="routing">
+      angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy', 'angularMoment']).
+        config(['$routeProvider', function ($routeProvider) {
+          $routeProvider.
+           when("/", { templateUrl: "home.html", controller: "homeController" }).
+           when("/admin", { templateUrl: "admin.html", controller: "adminController" }).
+           when("/login", { templateUrl: "login.html", controller: "loginController" }).
+           otherwise({ redirectTo: '/' });
 
-      }])
-  </script>
-  <script id="service">
+        }])
+    </script>
+    <script id="service">
     angular.module('greenhouse').
       service("greenApiService", ['$http', '$q', function ($http, $q) {
 
-        var host = 'http://miticv.duckdns.org:8080';
-        sessionStorage.setItem('pass', '55555'); //for testing only!!
+        //var host = 'http://miticv.duckdns.org:8080';
+        var host = '';
+        //sessionStorage.setItem('pass', '55555'); //for testing only!!
         //#region service
         return ({
-
-          //getSensorData: getSensorData,
-          //getHistoryLog: getHistoryLog,
-          //getMonthData: getMonthData,
-          //getYearData: getYearData,
-          //viewFiles: viewFiles,
 
           isAdmin: isAdmin,
 
@@ -544,23 +534,12 @@
           doReboot: doReboot
         });
         //#endregion
-        //#region IsAdmin
+        //#region isAdmin
         function isAdmin(pin) {
 
-          $http({
+          return $http({
             method: "get",
-            url: host + '/pin?U=' + pin
-          }).sucess(function (data) {
-            if (data.data == 1) {
-              sessionStorage.setItem('pass', pin);
-              return true;
-            } else {
-              sessionStorage.removeItem('pass');
-              return false;
-            }
-          }).error(function () {
-            sessionStorage.removeItem('pass');
-            return false;
+            url: host + '/admin?U=' + pin
           });
         }
         //#endregion
@@ -605,12 +584,12 @@
         }
         //#endregion
         //#region setTime
-        function setTime(t) { //year, month, day, hour, min, sec, week
+        function setTime(t) {
 
           return $http({
             method: "put",
             headers: { 'PP': sessionStorage.getItem('pass') },
-            url: host + '/clock?U=' + t //year + month + day + hour + min + sec + week
+            url: host + '/clock?U=' + t
           });
         }
         //#endregion
@@ -643,247 +622,281 @@
           warning: notify('warning')
         };
       }]);
-  </script>
-  <script id="home">
-    angular.module('greenhouse').
-      controller('homeController', ['$scope', 'greenApiService', function ($scope, greenApiService) {
+    </script>
+    <script id="home">
+      angular.module('greenhouse').
+        controller('homeController', ['$scope', 'greenApiService', function ($scope, greenApiService) {
 
-        //$scope.getData = function () {
-        //  greenApiService.getSensorData();
-        //};
+          //$scope.getData = function () {
+          //  greenApiService.getSensorData();
+          //};
 
-      }]);
+        }]);
 
-  </script>
-  <script id="admin">
-    var DateFormat = "";
+    </script>
+    <script id="login">
+      angular.module('greenhouse').
+        controller('loginController', ['$scope', 'greenApiService', '$location', 'NotifierService',
+       function ($scope, greenApiService, $location, NotifierService) {
 
-    angular.module('greenhouse').
-      controller('adminController', ['$scope', 'greenApiService', 'NotifierService', '$q', '$interval', function ($scope, greenApiService, NotifierService, $q, $interval) {
+         $scope.loading; //used to show system backdrop
+         $scope.loginpass = '';
+         $scope.login = login;
 
-        //$scope.settings = ''; //settings received from the device
-        $scope.set = {  //settings received from the device
-          LogHttp: '',
-          LogRAM: '',
-          BootNoSD: '',
-          SensorLogFreq: '',
-          sensorFreqOptions: [
-              { label: '10 min', value: 0 },
-              { label: '30 min', value: 1 },
-              { label: '60 min', value: 2 }
-          ]
-        };
-        $scope.pass = {
-          pass: sessionStorage.getItem('pass'),
-          currentPass: '',
-          newPass: '',
-          confirmPass: ''
-        };
+         function login() {
+           $scope.loading = greenApiService.isAdmin($scope.loginpass.substring(0, 5)).then(
+               function success(data) {
+                 $('#collapseBoot').collapse('toggle');
+                 sessionStorage.setItem('pass', $scope.loginpass.substring(0, 5));
+                 $location.path('/admin');
+               },
+               function error(data) {
+                 NotifierService.error("Invalid password", "Error");
+               });
+         };
 
-        $scope.loaded = true; //show alternate screen if API fails to refresh
-        $scope.time; //stores moment format of the date on the device
-        $scope.stopTime; //used to stop runningTime counter if needed
-        $scope.loading; //used to show system backdrop
-        $scope.booting; //used to show reboot backdrop
-        $scope.newDate;
+       }]);
 
-        //functions:
-        $scope.load = load;
-        //$scope.runningTime = runningTime;
-        $scope.saveSettings = saveSettings;
-        $scope.settingsChanged = settingsChanged;
-        $scope.cancelSettingsChanges = cancelSettingsChanges;
+    </script>
 
-        $scope.savePassword = savePassword;
-        $scope.passwordsChanged = passwordsChanged;
-        $scope.cancelPasswordChanges = cancelPasswordChanges;
+    <script id="admin">
+      var DateFormat = "";
 
-        $scope.saveDate = saveDate;
+      angular.module('greenhouse').
+        controller('adminController', ['$scope', 'greenApiService', 'NotifierService', '$q', '$interval', '$location',
+                              function ($scope, greenApiService, NotifierService, $q, $interval, $location) {
 
-        $scope.reboot = reboot;
+                                //$scope.settings = ''; //settings received from the device
+                                $scope.set = {  //settings received from the device
+                                  LogHttp: '',
+                                  LogRAM: '',
+                                  BootNoSD: '',
+                                  SensorLogFreq: '',
+                                  sensorFreqOptions: [
+                                      { label: '10 min', value: 0 },
+                                      { label: '30 min', value: 1 },
+                                      { label: '60 min', value: 2 }
+                                  ]
+                                };
+                                $scope.pass = {
+                                  pass: sessionStorage.getItem('pass'),
+                                  currentPass: '',
+                                  newPass: '',
+                                  confirmPass: ''
+                                };
 
-        $scope.load();
+                                $scope.loaded = true; //show alternate screen if API fails to refresh
+                                $scope.time; //stores moment format of the date on the device
+                                $scope.stopTime; //used to stop runningTime counter if needed
+                                $scope.loading; //used to show system backdrop
+                                $scope.booting; //used to show reboot backdrop
+                                $scope.newDate;
 
-        //internals
-        var originalSettings;
-        function settingsChanged() {
-          return !angular.equals($scope.set, originalSettings);
-        }
-        function cancelSettingsChanges() {
-          $scope.set = angular.copy(originalSettings);
-        }
+                                //functions:
+                                $scope.load = load;
+                                //$scope.runningTime = runningTime;
+                                $scope.saveSettings = saveSettings;
+                                $scope.settingsChanged = settingsChanged;
+                                $scope.cancelSettingsChanges = cancelSettingsChanges;
 
-        var originalPasswords = angular.copy($scope.pass);
-        function passwordsChanged() {
-          return !angular.equals($scope.pass, originalPasswords);
-        }
-        function cancelPasswordChanges() {
-          $scope.pass = angular.copy(originalPasswords);
-        }
+                                $scope.savePassword = savePassword;
+                                $scope.passwordsChanged = passwordsChanged;
+                                $scope.cancelPasswordChanges = cancelPasswordChanges;
+
+                                $scope.saveDate = saveDate;
+
+                                $scope.reboot = reboot;
+
+                                $scope.logOut = logOut;
+
+                                $scope.load();
+
+                                //internals
+                                var originalSettings;
+                                function settingsChanged() {
+                                  return !angular.equals($scope.set, originalSettings);
+                                }
+                                function cancelSettingsChanges() {
+                                  $scope.set = angular.copy(originalSettings);
+                                }
+
+                                var originalPasswords = angular.copy($scope.pass);
+                                function passwordsChanged() {
+                                  return !angular.equals($scope.pass, originalPasswords);
+                                }
+                                function cancelPasswordChanges() {
+                                  $scope.pass = angular.copy(originalPasswords);
+                                }
 
 
-        //#region functions
-        //private:
-        function runningTime() {
-          $scope.time.add(1, 's');
-        }
-        //public:
-        function reboot() {
-          $scope.booting = greenApiService.doReboot().then(
-            function success(data) {
-              $('#collapseBoot').collapse('toggle');
-              NotifierService.info("Device Rebooted!", "Success");
-            },
-            function error(data) {
-              NotifierService.error("could not reboot device.Api failed.", "Error");
+                                //#region functions
+                                //private:
+                                function runningTime() {
+                                  $scope.time.add(1, 's');
+                                }
+                                //public:
+                                function reboot() {
+                                  $scope.booting = greenApiService.doReboot().then(
+                                    function success(data) {
+                                      $('#collapseBoot').collapse('toggle');
+                                      NotifierService.info("Device Rebooted!", "Success");
+                                    },
+                                    function error(data) {
+                                      NotifierService.error("could not reboot device.Api failed.", "Error");
+                                    });
+                                }
+
+                                function saveSettings() {
+                                  //build query:
+                                  var settings = sessionStorage.getItem('pass') + ($scope.set.LogHttp ? '1' : '0') + ($scope.set.SensorLogFreq.value) + ($scope.set.LogRAM ? '1' : '0') + ($scope.set.BootNoSD ? '1' : '0');
+                                  $scope.loading = greenApiService.setSettings(settings).then(
+                                    function success(data) {
+                                      originalSettings = angular.copy($scope.set);
+                                      NotifierService.info("Saved.", "Success");
+                                    },
+                                    function error(data) {
+                                      NotifierService.error("could not save settings. Api failed.", "Error");
+                                    });
+                                }
+
+                                function saveDate() {
+                                  //build query:
+                                  var time = moment($scope.newDate, 'MMMM Do YYYY, HH:mm:ss (dd)');
+                                  var arg = time.format("YYMMDDHHmmss") + (1 + parseInt(time.format("e"))); //device count from Sun, moment count from Mon fix
+                                  $scope.loading = greenApiService.setTime(arg).then(
+                                    function success(data) {
+                                      $scope.time = moment(data.data.newdate, "YYYY-MM-DD HH:mm:ss");
+                                      NotifierService.info("Saved.", "Success");
+                                    },
+                                    function error(data) {
+                                      NotifierService.error("could not save time. Api failed.", "Error");
+                                    });
+                                }
+
+                                function savePassword() {
+                                  //build query:
+                                  var settings = $scope.pass.newPass.substring(0, 5) + (originalSettings.LogHttp ? '1' : '0') + (originalSettings.SensorLogFreq.value) + (originalSettings.LogRAM ? '1' : '0') + (originalSettings.BootNoSD ? '1' : '0');
+                                  $scope.loading = greenApiService.setSettings(settings).then(
+                                    function success(data) {
+                                      sessionStorage.setItem('pass', $scope.pass.newPass.substring(0, 5));
+                                      $scope.pass = angular.copy(originalPasswords);
+                                      $scope.pass.pass = sessionStorage.getItem('pass');
+                                      originalPasswords = angular.copy($scope.pass);
+                                      NotifierService.info("Saved.", "Success");
+                                    },
+                                    function error(data) {
+                                      NotifierService.error("could not save password. Api failed.", "Error");
+                                    });
+
+                                }
+
+                                function logOut() {
+                                  sessionStorage.clear();
+                                  $location.path('/')
+
+                                }
+
+                                // sequential calls both calls at the same time, and one fails (Arduino can not multi task)
+                                //$scope.load = $q.all([$scope.promiseSettingPass, $scope.promiseTime]);
+                                function load() {
+                                  $scope.loaded = true;
+                                  $scope.loading = greenApiService.getSettings().then(
+                                    function success(data) {
+                                      var settings = data.data;
+                                      sessionStorage.setItem('pass', settings.substring(0, 5)); //make user pass is current!
+                                      $scope.set.LogHttp = settings.substring(5, 6) === '1';
+                                      $scope.set.SensorLogFreq = $scope.set.sensorFreqOptions[settings.substring(6, 7)];
+                                      $scope.set.LogRAM = settings.substring(7, 8) === '1';
+                                      $scope.set.BootNoSD = settings.substring(8, 9) === '1';
+                                      originalSettings = angular.copy($scope.set);
+
+                                      return greenApiService.getTime().then(
+                                            function success(data) {
+                                              //2015-02-19 12:20:13 3  (1=sunday, 2=monday.... 7-sat) (do not parse e(day of the week) not needed)
+                                              $scope.time = moment(data.data.datetime, "YYYY-MM-DD HH:mm:ss");
+                                              $scope.stopTime = $interval(runningTime, 1000);
+                                            },
+                                            function error(e) {
+                                              NotifierService.error("Can not load time.", "Error");
+                                              $scope.loaded = false;
+                                            });
+                                    },
+                                    function error(e) {
+                                      NotifierService.error("Can not load settings.", "Error");
+                                      $scope.loaded = false;
+                                    });
+                                }
+                                //#endregion
+
+                              }]);
+
+    </script>
+    <script id="directive">
+
+      angular.module('greenhouse').
+        directive('uiDatepicker', function uiDatepickerDirective() {
+          'use strict';
+
+          function link(scope, el, attr, ngModel) {
+            var input = el.find('input');
+            $(el).datetimepicker({
+              sideBySide: true,
+              showTodayButton: true,
+              useCurrent: true,
+              showClear: true,
+              format: 'MMMM Do YYYY, HH:mm:ss (dd)'
             });
-        }
-
-        function saveSettings() {
-          //build query:
-          var settings = sessionStorage.getItem('pass') + ($scope.set.LogHttp ? '1' : '0') + ($scope.set.SensorLogFreq.value) + ($scope.set.LogRAM ? '1' : '0') + ($scope.set.BootNoSD ? '1' : '0');
-          $scope.loading = greenApiService.setSettings(settings).then(
-            function success(data) {
-              originalSettings = angular.copy($scope.set);
-              NotifierService.info("Saved.", "Success");
-            },
-            function error(data) {
-              NotifierService.error("could not save settings. Api failed.", "Error");
+            input.on('blur keyup change', function () {
+              ngModel.$setViewValue(input.val());
+              //console.log(input.val());
             });
-        }
+          }
 
-        function saveDate() {
-          //build query:
-          var time = moment($scope.newDate, 'MMMM Do YYYY, HH:mm:ss (dd)');
-          var arg = time.format("YYMMDDHHmmss") + (1 + parseInt(time.format("e"))); //device count from Sun, moment count from Mon fix          
-          $scope.loading = greenApiService.setTime(arg).then(
-            function success(data) {
-              $scope.time = moment(data.data.newdate, "YYYY-MM-DD HH:mm:ss");
-              NotifierService.info("Saved.", "Success");
-            },
-            function error(data) {
-              NotifierService.error("could not save time. Api failed.", "Error");
-            });
-        }
-
-        function savePassword() {
-          //build query:
-          var settings = $scope.pass.newPass.substring(0,5) + (originalSettings.LogHttp ? '1' : '0') + (originalSettings.SensorLogFreq.value) + (originalSettings.LogRAM ? '1' : '0') + (originalSettings.BootNoSD ? '1' : '0');
-          $scope.loading = greenApiService.setSettings(settings).then(
-            function success(data) {
-              sessionStorage.setItem('pass', $scope.pass.newPass.substring(0, 5));
-              $scope.pass = angular.copy(originalPasswords);
-              $scope.pass.pass = sessionStorage.getItem('pass');
-              originalPasswords = angular.copy($scope.pass);
-              NotifierService.info("Saved.", "Success");
-            },
-            function error(data) {
-              NotifierService.error("could not save password. Api failed.", "Error");
-            });
-          
-        }
-
-        // sequential calls both calls at the same time, and one fails (Arduino can not multi task)
-        //$scope.load = $q.all([$scope.promiseSettingPass, $scope.promiseTime]);
-        function load() {
-          $scope.loaded = true;
-          $scope.loading = greenApiService.getSettings().then(
-            function success(data) {
-              var settings = data.data;
-              sessionStorage.setItem('pass', settings.substring(0, 5)); //make user pass is current!
-              $scope.set.LogHttp = settings.substring(5, 6) === '1';
-              $scope.set.SensorLogFreq = $scope.set.sensorFreqOptions[settings.substring(6, 7)];
-              $scope.set.LogRAM = settings.substring(7, 8) === '1';
-              $scope.set.BootNoSD = settings.substring(8, 9) === '1';
-              originalSettings = angular.copy($scope.set);
-
-              return greenApiService.getTime().then(
-                    function success(data) {
-                      //2015-02-19 12:20:13 3  (1=sunday, 2=monday.... 7-sat) (do not parse e(day of the week) not needed)
-                      $scope.time = moment(data.data.datetime, "YYYY-MM-DD HH:mm:ss");
-                      $scope.stopTime = $interval(runningTime, 1000);
-                    },
-                    function error(e) {
-                      NotifierService.error("Can not load time.", "Error");
-                      $scope.loaded = false;
-                    });
-            },
-            function error(e) {
-              NotifierService.error("Can not load settings.", "Error");
-              $scope.loaded = false;
-            });
-        }
-        //#endregion
-
-      }]);
-
-  </script>
-  <script id="directive">
-
-    angular.module('greenhouse').
-      directive('uiDatepicker', function uiDatepickerDirective() {
+          return {
+            restrict: 'A',
+            require: 'ngModel',
+            scope: { ngModel: '=' },
+            link: link
+          };
+        }).
+      directive('ngMatch', ['$parse', function ngMatchDirective($parse) {
         'use strict';
 
-        function link(scope, el, attr, ngModel) {
-          var input = el.find('input');
-          $(el).datetimepicker({
-            sideBySide: true,
-            showTodayButton: true,
-            useCurrent: true,
-            showClear: true,
-            format: 'MMMM Do YYYY, HH:mm:ss (dd)'
-          });
-          input.on('blur keyup change', function () {
-            ngModel.$setViewValue(input.val());
-            //console.log(input.val());
-          });
-        }
+        function link(scope, elem, attrs, ctrl) {
+          // if ngModel is not defined, we don't need to do anything
+          if (!ctrl) return;
+          if (!attrs['ngMatch']) return;
 
-        return {
-          restrict: 'A',
-          require: 'ngModel',
-          scope: { ngModel: '=' },
-          link: link
+          var valueToMatch = $parse(attrs['ngMatch']);
+
+          var validator = function (value) {
+            var temp = valueToMatch(scope),
+                v = value === temp;
+            ctrl.$setValidity('match', v);
+            return value;
+          }
+
+          ctrl.$parsers.unshift(validator);
+          ctrl.$formatters.push(validator);
+          attrs.$observe('ngMatch', function () {
+            validator(ctrl.$viewValue);
+          });
+
         };
-      }).
-    directive('ngMatch', ['$parse', function ngMatchDirective($parse) {
-      'use strict';
-    
-      function link(scope, elem, attrs, ctrl) {
-        // if ngModel is not defined, we don't need to do anything
-        if (!ctrl) return;
-        if (!attrs['ngMatch']) return;
-
-        var valueToMatch = $parse(attrs['ngMatch']);
-
-        var validator = function (value) {
-          var temp = valueToMatch(scope),
-              v = value === temp;
-          ctrl.$setValidity('match', v);
-          return value;
-        }
-
-        ctrl.$parsers.unshift(validator);
-        ctrl.$formatters.push(validator);
-        attrs.$observe('ngMatch', function () {
-          validator(ctrl.$viewValue);
-        });
-
-      };
         return {
           restrict: 'A',
           require: '?ngModel',
           link: link
         };
-    }]);
+      }]);
 
-  </script>
+    </script>
 
-  <script id="startup">
+    <script id="startup">
     $(document).ready(function () {
       angular.bootstrap(document, ['greenhouse']);
     });
-  </script>
+    </script>
 
-</body>
+  </body>
 </html>

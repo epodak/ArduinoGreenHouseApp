@@ -12,7 +12,7 @@ SPI SD CS: 4
 #include <SPI.h>
 #include <Wire.h>
 #include <avr/pgmspace.h> //flash, fast, 10,000x 
-#include <avr/eeprom.h>   //slow (3ms) [therefore use it only for startup variables], 100,000x 
+//#include <avr/eeprom.h>   //slow (3ms) [therefore use it only for startup variables], 100,000x 
 
 /* ################# Hardware Settings ############################ */
 /* address for clock on I2C bus */
@@ -103,27 +103,14 @@ digital from  0   to 1      ??
    PUT /date or
    y=15&M=12&d=15&h=23&m=55&s=15&w=2  
    A=pass1&*/
-#define BUFSIZ 30
+#define BUFSIZ 40
 char request[BUFSIZ];
 char putheader[BUFSIZ];
 
 /* Our web server will timeout in this many ms */
 //#define TIMEOUTMS 2000
 
-// store error strings in flash to save RAM
-//#define error(s) error_P(PSTR(s))
-//
-//void error_P(const char* str) {
-//	PgmPrint("error: ");
-//	SerialPrintln_P(str);
-//	if (card.errorCode()) {
-//		PgmPrint("SD error: ");
-//		Serial.print(card.errorCode(), HEX);
-//		Serial.print(',');
-//		Serial.println(card.errorData(), HEX);
-//	}
-//	while (1);
-//}
+//#define SERIALDEBUG
 
 void setup() {
 
@@ -357,16 +344,20 @@ void saveSettings(){
 
 bool isPassCorrect(char *pass)
 {
+#ifdef SERIALDEBUG
+	Serial.print("isPassCorrect:");
+	Serial.println(pass);
+#endif
 	//return true;
 	//012345678 Header
 	//PP: 12345
 	//i = 3;
 	if (
-		settings[0] == pass[4] &&
-		settings[1] == pass[5] &&
-		settings[2] == pass[6] &&
-		settings[3] == pass[7] &&
-		settings[4] == pass[8]
+		settings[0] == pass[0] &&
+		settings[1] == pass[1] &&
+		settings[2] == pass[2] &&
+		settings[3] == pass[3] &&
+		settings[4] == pass[4]
 		)
 		return true;
 	else
@@ -468,6 +459,10 @@ void checkForApiRequests()
 				else if (strstr(request, "GET /cache.app") != 0) {
 					ApiRequest_GetIndividualFile(&client, request + 5);
 				}
+				/****************************** manifest file **********************************/
+				else if (strstr(request, "GET /admin?U=") != 0) {
+					ApiRequest_CheckLogInPin(&client, request + 13);
+				}
 				/****************************** manifest file (ANYONE) *************************/
 				else if (strstr(request, "GET /data") != 0) {
 					/* here you ask for data1501.jsn or data1502.jsn */
@@ -495,7 +490,7 @@ void checkForApiRequests()
 					ApiRequest_PutSettings(&client, putheader, request + 13);
 				}
 				/***************************** update clock  (ADMIN) ***************************/
-				else if (strstr(request, "PUT /clock") != 0) {
+				else if (strstr(request, "PUT /clock?U=") != 0) {
 					//?U=
 					ApiRequest_PutDateTime(&client, putheader, request + 13);
 				}
@@ -503,7 +498,6 @@ void checkForApiRequests()
 				else if (strstr(request, "PUT /reboot") != 0) {
 					ApiRequest_PutReboot(&client, putheader);
 				}
-
 				/**********************************404******************************************/
 				else {
 					ApiRequest_GetErrorScreen(&client, true, false);
@@ -524,7 +518,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 	uint8_t indexargs = 0;
 	bool parametersFound = false;
 	int c = (*client).read();
-	putheader[0] = c;
+	//putheader[0] = c;
 	while (c > -1){
 		// If it isn't a new line, add the character to the buffer
 		if (c != '\n' && c != '\r') {
@@ -535,13 +529,18 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 				index++;
 			}
 			/*---- find post or put arguments --------*/
-			if (!parametersFound){ //look for A=
-				putheader[0] = putheader[1];
-				putheader[1] = c;
-				if (putheader[0] == 'P' && putheader[1] == 'P'){
-					parametersFound = true;
-					indexargs=2;
-				}
+			if (!parametersFound){ //look for PP:
+				putheader[indexargs++] = c; //save 0,1,2 for comparison
+				if (indexargs == 4) {
+					putheader[0] = putheader[1];
+					putheader[1] = putheader[2];
+					putheader[2] = putheader[3];
+					indexargs--; //indexargs is 3 again
+
+					if (putheader[0] == 'P' && putheader[1] == 'P' && putheader[2] == ':'){
+						parametersFound = true;
+					}
+				}	
 			}
 			else{
 				if (indexargs < BUFSIZ){					
@@ -560,7 +559,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 			if (indexargs > 3 && indexargs < BUFSIZ) {
 				putheader[indexargs] = 0;
 				indexargs = BUFSIZ + 1;
-			}			
+			}		
 		}
 		logRamUsage();
 		c = (*client).read();
@@ -569,8 +568,12 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 	//so we did not have chance to break the line yet:
 	putheader[BUFSIZ - 1] = 0;
 	request[BUFSIZ - 1] = 0;
-	//Serial.println(putheader);
-	//Serial.println(request);
+#ifdef SERIALDEBUG
+	Serial.print("request:");
+	Serial.println(request);
+	Serial.print("putheader:");
+	Serial.println(putheader);
+#endif
 }
 
 void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
@@ -582,9 +585,10 @@ void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
 		(*client).println(F("Content-Type: text/cache-manifest"));
 	else
 		(*client).println(F("Content-Type: text/html"));
-	
-	(*client).println(F("Access-Control-Allow-Origin: *"));
-	(*client).println(F("Access-Control-Allow-Headers: PP"));
+	if (true){ //if settings allow other javascript websites to query our api
+		(*client).println(F("Access-Control-Allow-Origin: *"));
+		(*client).println(F("Access-Control-Allow-Headers: PP"));
+	}
 	(*client).println(F("Connection: close"));
 	(*client).println();
 }
@@ -603,6 +607,10 @@ void ApiRequest_GetErrorScreen(EthernetClient *client, bool is404, bool isJson)
 	else
 		(*client).println(F("Content-Type: text/html"));
 
+	if (true){ //if settings allow other javascript websites to query our api
+		(*client).println(F("Access-Control-Allow-Origin: *"));
+		(*client).println(F("Access-Control-Allow-Headers: PP"));
+	}
 	(*client).println(F("Connection: close"));
 	(*client).println();
 	if (is404){
@@ -634,10 +642,22 @@ void ApiRequest_GetOptionsScreen(EthernetClient *client)
 	(*client).println();
 }
 
+void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
+	
+	(strstr(pass, " HTTP"))[0] = 0;
+	if (isPassCorrect(pass))
+	{
+		ApiRequest_GetSuccessHeader(client, ".JSN");
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, false, true);
+	}
+}
+
 void ApiRequest_GetHomePage(EthernetClient *client)
 {
 	if (file.open(&root, "INDEX.HTM", O_READ)) {
-		ApiRequest_GetSuccessHeader(client, false);
+		ApiRequest_GetSuccessHeader(client, ".HTM");
 		int16_t c;
 		while ((c = file.read()) > 0) {
 			(*client).print((char)c);
@@ -653,9 +673,9 @@ void ApiRequest_GetHomePage(EthernetClient *client)
 void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
 	/* in PUT request pass is passed as header:*/
-	if (isPassCorrect(putheader))
+	if (isPassCorrect(putheader + 4))
 	{
-		ApiRequest_GetSuccessHeader(client, false);
+		ApiRequest_GetSuccessHeader(client, ".HTM");
 		// print all the files, use a helper to keep it clean
 		(*client).println(F("<h2>Files:</h2>"));
 		ListFiles(client, LS_SIZE); //LS_SIZE | LS_DATE
@@ -669,7 +689,7 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* putheader)
 {
 	/* in PUT request pass is passed as header */
-	if (isPassCorrect(putheader))
+	if (isPassCorrect(putheader + 4))
 	{
 		// this time no space after the /, so a sub-file!
 		//char *filename;
@@ -743,7 +763,7 @@ void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* param
 {
 	//012345678901
 	//?U=123456789
-	if (isPassCorrect(putheader))
+	if (isPassCorrect(putheader + 4))
 	{
 		for (i = 0; i < 9; i++){//settings has 9 fields (1-5 admin + 
 			settings[i] = parameters[i + 3];
@@ -758,16 +778,15 @@ void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* param
 	}
 }
 
-void ApiRequest_PutDateTime(EthernetClient *client, char* arguments, char* parameters)
+void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* parameters)
 {
-	//          10        20       30         40
-	//01234567890123456789012345678901234567890 
-	//A=55555&D=YYMMDDhhmmssw
+	//          10        20
+	//012345678901234567890 
 	//D=YYMMDDhhmmssw
 
 	//to update clock do:
 	//setDS3231time(15, 2, 10, 23, 43, 10, 3);  //2015-05-22 21:15:30 tuesday
-	if (isPassCorrect(arguments))
+	if (isPassCorrect(putheader + 4))
 	{
 		/* should we check here if all numbers are between 0 amd 9, otherwise error out? */
 
@@ -809,7 +828,7 @@ byte toDec(char A)
 
 void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 {
-	if (isPassCorrect(arguments))
+	if (isPassCorrect(arguments + 4))
 	{		
 		ApiRequest_GetSuccessHeader(client, ".JSN");
 		(*client).println(F("{ \"response\":\"Success\" }"));
@@ -1158,68 +1177,28 @@ char* getCurrentErrorFileName(){
 
 
 void logInit(){
-	//Serial.begin(9600);
+#ifdef SERIALDEBUG
+	Serial.begin(9600);
+#endif
 }
 
 void error(char* line){
 
 
-	//Serial.println(line);
-	//strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
-	//if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
-	//	if (file.isFile()){
-	//		file.print(F("{ \"Error\":\""));
-	//		file.print(line);
-	//		file.print(F("\", "));
-	//		file.print(F("\"datetime\":\""));
-	//		file.print(getCurrentErrorFileName());
-	//		file.print(F("\" }"));
-	//		file.println();
-	//	}
-	//	file.close();
-	//}
-	//else{
-	//	cryticalError(1);
-	//}
 }
 
 void error(const char* line){
-	//Serial.print(F("Error:"));
-	//Serial.println(line);
 
-	//SdFile file;
-	//file.open(root, getCurrentErrorFileName(), O_CREAT | O_APPEND | O_WRITE);    //Open or create the file
-	//if (file.isFile()){
-
-	//	file.print(F("{ \"date\": "));
-	//	file.print(getCurrentStringDate(false));
-	//	file.print(F("\", \"Error\": "));
-	//	file.print(line);
-	//	file.println(F("\" }"));
-	//}
 }
 
 void error(const __FlashStringHelper* line)
 {
-	//Serial.print(F("Error:"));
-	//Serial.println(line);
 
-	//SdFile file;
-	//file.open(root, getCurrentErrorFileName(), O_CREAT | O_APPEND | O_WRITE);    //Open or create the file
-	//if (file.isFile()){
-
-	//	file.print(F("{ \"date\": "));
-	//	file.print(getCurrentStringDate(false));
-	//	file.print(F("\", \"Error\": "));
-	//	file.print(line);
-	//	file.println(F("\" }"));
-	//}
 
 }
 
 void logHttp(char* line, char* args){
 
-	//Serial.println(line);
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
 	if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
 		if (file.isFile()){
@@ -1239,7 +1218,6 @@ void logHttp(char* line, char* args){
 
 void log(char* line){
 
-	//Serial.println(line);
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
 	if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
 		if (file.isFile()){
@@ -1260,6 +1238,9 @@ void cryticalError(byte Reason){
 
 	if (Reason == 1 && settings[8] == '1') //if option to reboot on SD error - then reboot
 	{
+#ifdef SERIALDEBUG
+		Serial.println("booting....");
+#endif
 		//Can not write error to any file because this is SD error.... write to eeprom?
 		resetFunc();  //call reset
 	}
