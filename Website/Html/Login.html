@@ -1,0 +1,33 @@
+﻿
+<div class="row">
+  <div class="col-sm-12">
+
+    <table class="table">
+      <caption> Enter Credentials</caption>
+      <tbody>
+        <tr class="success">
+          <td>
+            <div cg-busy="loading">
+              <form class="form">
+                <div class="form-group">
+                  <label class="sr-only" for="pass">Password</label>
+                  <input type="password" class="form-control" id="pass" placeholder="Password" ng-model="loginpass">
+                </div>
+                <div class="row">
+                  <div class="col-sm-4">
+                    <button type="submit" class="btn btn-primary" ng-click="login()" ng-disabled="loginpass==''">Login</button>
+                  </div>
+                  <div class="col-sm-4">
+                    <button type="button" class="btn btn-danger" ng-click="loginpass=''" ng-hide="loginpass==''">Cancel</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+
+  </div>
+</div>

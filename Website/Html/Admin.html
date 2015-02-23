@@ -1,0 +1,255 @@
+﻿   <!-- System status -->
+<div class="row">
+  <div class="col-sm-12">
+    <table class="table">
+      <caption> System status</caption>
+      <tbody>
+        <tr>
+          <td class="success">
+
+            <div class="row">
+              <div class="col-sm-4">
+                <i class="fa fa-rocket green fa-lg"></i> System running for <strong><span class="green">4 days</span></strong> since last reboot
+              </div>
+              <div class="col-sm-4">
+                <i class="fa fa-bar-chart green fa-lg"></i> System is healthy with <strong><span class="green">417b</span></strong> to <strong><span class="green">513b</span></strong> of Free RAM
+              </div>
+              <div class="col-sm-4" ng-click="logOut()">
+                <!--<i class="fa fa-recycle green fa-lg"></i> System has been booted <strong><span class="green">51</span></strong> times since <span class="green">Feb 5 2015</span>-->
+                <button type="button" class="btn btn-primary btn-xs" ng-click="logOut()">Log Out</button>
+              </div>
+            </div>
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!--Change Settings-->
+<div class="row">
+  <div class="col-sm-12">
+
+    <table class="table">
+      <caption> System Settings</caption>
+      <tbody>
+        <tr class="success">
+          <td>
+            <div cg-busy="loading">
+              <div class="row" ng-show="loaded">
+                <!-- Log Settings -->
+                <div class="col-sm-4">
+                  <form name="setForm" class="form">
+                    <div class="form-group">
+                      <label>Change Log Settings</label>
+                    </div>
+                    <div class="form-group">
+                      <div class="checkbox">
+                        <label>
+                          <input type="checkbox" ng-model="set.LogHttp">
+                          Log http request in log file
+                        </label>
+                      </div>
+                      <div class="checkbox">
+                        <label>
+                          <input type="checkbox" ng-model="set.LogRAM">
+                          Log RAM usage in session log file
+                        </label>
+                      </div>
+                      <div class="checkbox">
+                        <label>
+                          <input type="checkbox" ng-model="set.BootNoSD">
+                          Reboot if SD not present
+                        </label>
+                      </div>
+                      <div class="checkbox">
+                        <label>
+                          Set Sensor log frequency:
+                          <select class="form-control" ng-model="set.SensorLogFreq"
+                                  ng-options="opt as opt.label for opt in set.sensorFreqOptions"></select>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-sm-4">
+                        <button type="submit" class="btn btn-primary" ng-disabled="!settingsChanged()" ng-click="saveSettings()">Submit</button>
+                      </div>
+                      <div class="col-sm-4">
+                        <button type="button" class="btn btn-danger" ng-hide="!settingsChanged()" ng-click="cancelSettingsChanges()">Cancel</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+                <!-- Date Time -->
+                <div class="col-sm-4">
+                  <form class="form">
+                    <div class="form-group">
+                      <label>Change Device Time</label>
+                    </div>
+                    <div class="form-group">
+                      <strong><span class="green">{{time | amDateFormat:'MMMM Do YYYY, HH:mm:ss (dd)' }} &nbsp;</span></strong>
+                    </div>
+                    <div class="form-group">
+                      <label class="sr-only" for="newDateTime">New Time</label>
+                      <div class="input-group" id="dateTmePicker" ui-datepicker ng-model="newDate">
+                        <input type="text" class="form-control" id="newDateTime" placeholder="Set new time" />
+                        <div class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></div>
+                      </div>
+                    </div>
+                    <div class="row" style="margin-top: 75px;">
+                      <div class="col-sm-4">
+                        <button type="submit" class="btn btn-primary" ng-disabled="!newDate" ng-click="saveDate()">Submit</button>
+                      </div>
+                      <!--<div class="col-sm-4">
+                        <button type="button" class="btn btn-danger" ng-hide="!newDate" ng-click="">Cancel</button>
+                      </div>-->
+                    </div>
+                  </form>
+                </div>
+                <!-- Password -->
+                <div class="col-sm-4">
+                  <form class="form" name="passForm">
+                    <div class="form-group">
+                      <label>Change your password</label>
+                    </div>
+                    <div class="form-group">
+                      <input type="hidden" name="pass" ng-model="pass.pass">
+                      <input type="password"
+                             ng-class="{error: !passForm.currentPass.$valid}"
+                             name="currentPass"
+                             class="form-control"
+                             id="currentPass"
+                             placeholder="Current Password"
+                             ng-model="pass.currentPass"
+                             ng-match="pass.pass"
+                             ng-required="true">
+                    </div>
+                    <div class="form-group">
+
+                      <input type="password"
+                             ng-class="{error: !passForm.newPass.$valid}"
+                             name="newPass"
+                             class="form-control"
+                             id="newPass"
+                             placeholder="Password"
+                             ng-model="pass.newPass"
+                             ng-required="true"
+                             ng-minlength="5">
+                    </div>
+                    <div class="form-group">
+
+                      <input type="password"
+                             ng-class="{error: !passForm.confirmPass.$valid}"
+                             name="confirmPass"
+                             class="form-control"
+                             id="confirmPass"
+                             placeholder="Confirm Password"
+                             ng-model="pass.confirmPass"
+                             ng-required="true"
+                             ng-minlength="5"
+                             ng-match="pass.newPass">
+                    </div>
+                    <div class="row" style="margin-top: 0px;">
+                      <div class="col-sm-4">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                ng-disabled="!passwordsChanged() || passForm.$invalid"
+                                ng-click="savePassword()">
+                          Submit
+                        </button>
+                      </div>
+                      <div class="col-sm-4">
+                        <button type="button"
+                                class="btn btn-danger"
+                                ng-hide="!passwordsChanged()"
+                                ng-click="cancelPasswordChanges()">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div class="row" ng-hide="loaded">
+              <div class="col-sm-12">
+                Could not load settings. Please <a href="" ng-click="load()">refresh</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+
+        <!--<tr class="TO TO">
+          <td><i class="fa fa-tachometer green"></i> Set Sensor ranges - triger actions</td>
+          <td><i class="fa fa-tachometer green"></i> Auto Fish Feeder</td>
+          <td><i class="fa fa-tachometer green"></i> Send Email</td>
+          <td><i class="fa fa-tachometer green"></i> Send Text (https://www.twilio.com/sms/pricing)</td>
+          <td><i class="fa fa-tachometer green"></i> Change IP and MAC address (maybe i can change port too but harder?)[need to reboot after change]</td>
+        </tr>-->
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<!--Maintenance-->
+<div class="row">
+  <div class="col-sm-12">
+    <table class="table">
+      <caption> Maintenance</caption>
+      <tbody>
+        <tr class="success">
+          <td><i class="fa fa-tachometer green"></i> View files (Links) READY</td>
+          <td><i class="fa fa-tachometer green"></i> View sessions ADMIN</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!--Reboot-->
+<div class="row">
+  <div class="col-sm-12">
+    <table class="table">
+      <caption> Reboot Device</caption>
+      <tbody>
+        <tr class="success">
+          <td>
+            <div cg-busy="booting">
+              <div class=" row">
+                <div class="col-sm-12 text-center">
+                  <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#collapseBoot" aria-expanded="false" aria-controls="collapseBoot"><i class="fa fa-power-off"></i> Reboot</button>
+                  <div class="collapse" id="collapseBoot">
+                    <div class="well warning">
+                      <div class="row">
+                        <div class="col-xs-12">
+                          Are you sure?
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-xs-3">
+                        </div>
+                        <div class="col-xs-2">
+                          <button type="button" class="btn btn-success btn-lg" data-target="#collapseBoot" data-toggle="collapse">No</button>
+                        </div>
+                        <div class="col-xs-2">
+                        </div>
+                        <div class="col-xs-2">
+                          <button type="button" class="btn btn-danger btn-lg" ng-click="reboot()">Yes</button>
+                        </div>
+                        <div class="col-xs-3">
+                        </div>
+                        </row>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

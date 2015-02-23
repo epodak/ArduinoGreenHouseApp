@@ -18,16 +18,35 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="app\layout\footer.html" />
-    <Content Include="app\layout\header.html" />
-    <Content Include="app\layout\layout.html" />
-    <Content Include="app\test\test.html" />
-    <Content Include="app\useraccount\login.html" />
-    <Content Include="app\useraccount\register.html" />
-    <Content Include="app\useraccount\registerSuccess.html" />
-    <Content Include="app\useraccount\userhome.html" />
+    <Content Include="Css\GreenHouse.css" />
+    <Content Include="externals\angular-busy.min.css" />
+    <Content Include="externals\angular-busy.min.js" />
+    <Content Include="externals\angular-moment.min.js" />
+    <Content Include="externals\angular.min.js" />
+    <Content Include="externals\animate.min.css" />
+    <Content Include="externals\bootstrap-datetimepicker.min.css" />
+    <Content Include="externals\bootstrap-datetimepicker.min.js" />
+    <Content Include="externals\bootstrap.min.css" />
+    <Content Include="externals\bootstrap.min.js" />
+    <Content Include="externals\Chart.min.js" />
+    <Content Include="externals\font-awesome.min.css" />
+    <Content Include="externals\jquery.min.js" />
+    <Content Include="externals\moment.min.js" />
+    <Content Include="externals\toastr.min.css" />
+    <Content Include="externals\toastr.min.js" />
+    <Content Include="Html\Admin.html" />
+    <Content Include="Html\header.html" />
+    <Content Include="Html\Home.html" />
+    <Content Include="Html\Login.html" />
     <Content Include="index.htm" />
     <Content Include="index.html" />
+    <Content Include="Scripts\AdminController.js" />
+    <Content Include="Scripts\Directives.js" />
+    <Content Include="Scripts\HomeController.js" />
+    <Content Include="Scripts\LoginController.js" />
+    <Content Include="Scripts\Routing.js" />
+    <Content Include="Scripts\Service.js" />
+    <Content Include="Scripts\Startup.js" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -40,62 +59,7 @@
       <DependentUpon>web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <TypeScriptCompile Include="app\App.ts" />
-    <TypeScriptCompile Include="app\blocks\cache\cache.module.ts" />
-    <TypeScriptCompile Include="app\blocks\cache\cache.ts" />
-    <TypeScriptCompile Include="app\blocks\exception\apiError.ts" />
-    <TypeScriptCompile Include="app\blocks\exception\exception.module.ts" />
-    <TypeScriptCompile Include="app\blocks\exception\exception.provider.ts" />
-    <TypeScriptCompile Include="app\blocks\exception\exception.ts" />
-    <TypeScriptCompile Include="app\blocks\interceptor\interceptor.module.ts" />
-    <TypeScriptCompile Include="app\blocks\interceptor\interceptor.ts" />
-    <TypeScriptCompile Include="app\blocks\logger\logger.module.ts" />
-    <TypeScriptCompile Include="app\blocks\logger\logger.ts" />
-    <TypeScriptCompile Include="app\blocks\router\router.module.ts" />
-    <TypeScriptCompile Include="app\blocks\router\router.ts" />
-    <TypeScriptCompile Include="app\core\config.ts" />
-    <TypeScriptCompile Include="app\core\constants.ts" />
-    <TypeScriptCompile Include="app\core\core.module.ts" />
-    <TypeScriptCompile Include="app\core\interfaces.ts" />
-    <TypeScriptCompile Include="app\layout\config.route.ts" />
-    <TypeScriptCompile Include="app\layout\controllers.ts" />
-    <TypeScriptCompile Include="app\layout\layout.module.ts" />
-    <TypeScriptCompile Include="app\test\config.route.ts" />
-    <TypeScriptCompile Include="app\test\controllers.ts" />
-    <TypeScriptCompile Include="app\test\test.module.ts" />
-    <TypeScriptCompile Include="app\useraccount\config.route.ts" />
-    <TypeScriptCompile Include="app\useraccount\controllers.ts" />
-    <TypeScriptCompile Include="app\useraccount\interfaces.ts" />
-    <TypeScriptCompile Include="app\useraccount\models.ts" />
-    <TypeScriptCompile Include="app\useraccount\services.ts" />
-    <TypeScriptCompile Include="app\useraccount\useraccount.module.ts" />
-    <TypeScriptCompile Include="app\widgets\common.ts" />
-    <TypeScriptCompile Include="app\widgets\directives.ts" />
-    <TypeScriptCompile Include="app\widgets\filters.ts" />
-    <TypeScriptCompile Include="app\widgets\global.ts" />
-    <TypeScriptCompile Include="app\widgets\widgets.module.ts" />
-    <TypeScriptCompile Include="app\_all.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angular-translate\angular-translate.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angular-ui-bootstrap\angular-ui-bootstrap.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angular-ui\angular-ui-router.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular-animate.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular-cookies.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular-mocks.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular-resource.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular-route.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular-sanitize.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular-scenario.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\angularjs\angular.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\bootbox\bootbox.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\jasmine\jasmine.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\jquery\jquery.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\karma-jasmine\karma-jasmine.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\marked\marked.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\moment\moment.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\requirejs\require.d.ts" />
-    <TypeScriptCompile Include="Scripts\typings\toastr\toastr.d.ts" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
   </PropertyGroup>
@@ -112,7 +76,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>50801</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:50801/</IISUrl>
+          <IISUrl>http://localhost:50902/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

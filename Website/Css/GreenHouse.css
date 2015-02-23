@@ -1,0 +1,34 @@
+﻿
+.green {
+      color: green;
+    }
+
+    .yellow {
+      color: yellow;
+    }
+
+    .red {
+      color: #a94442;
+    }
+
+    input.error:focus {
+      box-shadow: 0 0 1px 1px red !important;
+    }
+
+    /* page link */
+    div[ng-view].ng-enter {
+      -webkit-animation: fadeInRight 0.5s;
+      animation: fadeInRight 0.5s;
+    }
+
+    /* ng-hide and ng-show */
+    .ng-hide-remove {
+      -webkit-animation: fadeIn 0.5s;
+      animation: fadeIn 0.5s;
+    }
+
+    .ng-hide-add {
+      -webkit-animation: fadeOut 0.5s;
+      animation: fadeOut 0.5s;
+      display: block !important;
+    }
