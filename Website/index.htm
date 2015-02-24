@@ -64,17 +64,15 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.2/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.0/js/toastr.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
-    <!--<script src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.3.0/bootbox.min.js"></script>-->
-    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-sanitize.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular-route.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-route.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-animate.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.12.0/ui-bootstrap-tpls.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-utils/0.1.1/angular-ui-utils.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-mocks.js"></script> <!-- remove after mocking is done -->
 
     <script type="text/ng-template" id="header.html">
       <nav class="navbar navbar-default text-center">
@@ -87,7 +85,7 @@
           <ul class="nav navbar-nav navbar-right">
             <li><a ng-hide="layout.isLoggedIn" href="/#/login"><i class="fa fa-wrench"></i> admin</a></li>
           </ul>
-        </div>   <!-- /.container-fluid -->
+        </div>
       </nav>
     </script>
 
@@ -201,8 +199,8 @@
             </tbody>
           </table>
 
-        </div><!-- /.col-sm-6 -->
-      </div><!--/row-->
+        </div>
+      </div>
 
     </script>
 
@@ -503,7 +501,7 @@
     </script>
 
     <script id="routing">
-      angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy', 'angularMoment']).
+      angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy', 'angularMoment', 'ngMock']).
         config(['$routeProvider', function ($routeProvider) {
           $routeProvider.
            when("/", { templateUrl: "home.html", controller: "homeController" }).
@@ -517,10 +515,8 @@
     angular.module('greenhouse').
       service("greenApiService", ['$http', '$q', function ($http, $q) {
 
-        //var host = 'http://miticv.duckdns.org:8080';
-        var host = '';
-        //sessionStorage.setItem('pass', '55555'); //for testing only!!
-        //#region service
+        var host = 'http://miticv.duckdns.org:8080';
+        //var host = '';
         return ({
 
           isAdmin: isAdmin,
@@ -530,6 +526,8 @@
 
           getTime: getTime,
           setTime: setTime,
+
+          getSensorData: getSensorData,
 
           doReboot: doReboot
         });
@@ -593,7 +591,21 @@
           });
         }
         //#endregion
+        //#region setTime
+        function getSensorData(month,year) {
+
+          // date time, AirTin, AitTout, HumidityIn, Humidity out, LIghtIn, LightOut, HeatIndexIn, HeatIndexout
+          return "[{'', 1, 1.2, 2, 2.5, 3.1, 5, 3, 2 }, ]";
+          //return $http({
+          //  method: "put",
+          //  headers: { 'PP': sessionStorage.getItem('pass') },
+          //  url: host + '/clock?U=' + t
+          //});
+        }
+        //#endregion
       }]);
+
+
 
 
     angular.module('greenhouse').
@@ -611,7 +623,6 @@
         function notify(type) {
           return function (message, title) {
             toastr[type](message, title);
-            //$log.debug(type + ':', message);
           };
         }
 
@@ -627,9 +638,7 @@
       angular.module('greenhouse').
         controller('homeController', ['$scope', 'greenApiService', function ($scope, greenApiService) {
 
-          //$scope.getData = function () {
-          //  greenApiService.getSensorData();
-          //};
+
 
         }]);
 
@@ -660,13 +669,11 @@
     </script>
 
     <script id="admin">
-      var DateFormat = "";
 
       angular.module('greenhouse').
         controller('adminController', ['$scope', 'greenApiService', 'NotifierService', '$q', '$interval', '$location',
                               function ($scope, greenApiService, NotifierService, $q, $interval, $location) {
 
-                                //$scope.settings = ''; //settings received from the device
                                 $scope.set = {  //settings received from the device
                                   LogHttp: '',
                                   LogRAM: '',
@@ -694,7 +701,6 @@
 
                                 //functions:
                                 $scope.load = load;
-                                //$scope.runningTime = runningTime;
                                 $scope.saveSettings = saveSettings;
                                 $scope.settingsChanged = settingsChanged;
                                 $scope.cancelSettingsChanges = cancelSettingsChanges;

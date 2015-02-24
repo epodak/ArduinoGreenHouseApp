@@ -52,6 +52,7 @@
   <ItemGroup>
     <Content Include="tslint.json" />
     <None Include="cache.app" />
+    <Content Include="index.gz" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

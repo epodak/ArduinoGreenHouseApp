@@ -19,8 +19,9 @@ SPI SD CS: 4
 #define DS3231_I2C_ADDRESS 0x68
 #define outputEthernetPin 10
 #define outputSdPin 4
-#define outputLcdPin 8
+//#define outputLcdPin 8
 #define SDISPEED SPI_HALF_SPEED
+//  SPI_FULL_SPEED
 
 void(*resetFunc) (void) = 0;  //declare reset function @ address 0
 
@@ -49,6 +50,10 @@ const prog_char string_4[] PROGMEM = ".err";
 const prog_char string_5[] PROGMEM = "session.txt";
 const prog_char string_6[] PROGMEM = "log.txt";
 const prog_char string_7[] PROGMEM = "settings.txt";
+//const prog_char string_8[] PROGMEM = "INDEX.GZ";
+//const prog_char string_9[] PROGMEM = ".GZ";
+//const prog_char string_10[] PROGMEM = "INDEX.HTM";
+//const prog_char string_11[] PROGMEM = ".HTM";
 PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 {
 	string_0,
@@ -58,7 +63,11 @@ PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 	string_4,
 	string_5,
 	string_6,
-	string_7
+	string_7 //,
+	//string_8,
+	//string_9,
+	//string_10,
+	//string_11
 };
 
 /************ DYNAMIC VARS ************/
@@ -101,7 +110,7 @@ digital from  0   to 1      ??
    should be the length of the largest api call (+1 for string end char \0):
    GET /file/12345678.123 or
    PUT /date or
-   y=15&M=12&d=15&h=23&m=55&s=15&w=2  
+   U=15&M=12&d=15&h=23&m=55&s=15&w=2  
    A=pass1&*/
 #define BUFSIZ 40
 char request[BUFSIZ];
@@ -458,6 +467,7 @@ void checkForApiRequests()
 				/****************************** manifest file **********************************/
 				else if (strstr(request, "GET /cache.app") != 0) {
 					ApiRequest_GetIndividualFile(&client, request + 5);
+					//ApiRequest_GetErrorScreen(&client, true, false);
 				}
 				/****************************** manifest file **********************************/
 				else if (strstr(request, "GET /admin?U=") != 0) {
@@ -519,7 +529,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 	bool parametersFound = false;
 	int c = (*client).read();
 	//putheader[0] = c;
-	while (c > -1){
+	while (c >= 0){
 		// If it isn't a new line, add the character to the buffer
 		if (c != '\n' && c != '\r') {
 			/*---- find request ----------------------*/
@@ -583,8 +593,14 @@ void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
 		(*client).println(F("Content-Type: application/json"));
 	else if (strstr(filename, ".CHE") != 0)
 		(*client).println(F("Content-Type: text/cache-manifest"));
-	else
+	else if (strstr(filename, ".GZ") != 0){
+		(*client).println(F("Content-Encoding: gzip"));
 		(*client).println(F("Content-Type: text/html"));
+	}
+	else
+		(*client).println(F("Content-Type: text/html"));	
+	
+
 	if (true){ //if settings allow other javascript websites to query our api
 		(*client).println(F("Access-Control-Allow-Origin: *"));
 		(*client).println(F("Access-Control-Allow-Headers: PP"));
@@ -656,10 +672,15 @@ void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 
 void ApiRequest_GetHomePage(EthernetClient *client)
 {
-	if (file.open(&root, "INDEX.HTM", O_READ)) {
-		ApiRequest_GetSuccessHeader(client, ".HTM");
+	//if (file.open(&root, "INDEX.OLD", O_READ)) {
+	//	ApiRequest_GetSuccessHeader(client, ".HTM");
+
+	// for this to work browser need to send this header: Accept-Encoding: gzip, deflate
+	if (file.open(&root, "INDEX.GZ", O_READ)) {
+		ApiRequest_GetSuccessHeader(client, ".GZ");
+
 		int16_t c;
-		while ((c = file.read()) > 0) {
+		while ((c = file.read()) >= 0) {
 			(*client).print((char)c);
 		}
 		file.close();
@@ -703,7 +724,7 @@ void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* 
 		if (file.open(&root, filename, O_READ)) {
 			ApiRequest_GetSuccessHeader(client, filename);
 			int16_t c;
-			while ((c = file.read()) > 0) {
+			while ((c = file.read()) >= 0) {
 				(*client).print((char)c);
 			}
 			file.close();
@@ -724,7 +745,7 @@ void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
 		if (file.open(&root, filename, O_READ)) {
 			ApiRequest_GetSuccessHeader(client, filename);
 			int16_t c;
-			while ((c = file.read()) > 0) {
+			while ((c = file.read()) >= 0) {
 				(*client).print((char)c);
 			}
 			file.close();
@@ -1181,6 +1202,19 @@ void logInit(){
 	Serial.begin(9600);
 #endif
 }
+
+void serialShow(char* line){
+#ifdef SERIALDEBUG
+	Serial.println(line);
+#endif
+}
+
+void serialShow(byte b){
+#ifdef SERIALDEBUG
+	Serial.println(b);
+#endif
+}
+
 
 void error(char* line){
 
