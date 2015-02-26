@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-# 2015-02-17:v9
+# 2015-02-17:v12
 # make sure you serve this file with "text/cache-manifest" content type
 
 CACHE:
@@ -14,6 +14,7 @@ http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js
 http://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular.min.js
 http://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular-route.min.js
 http://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-animate.min.js
+http://cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.8/angular-messages.min.js
 http://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1/Chart.min.js
 http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/css/bootstrap-datetimepicker.min.css
 http://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js

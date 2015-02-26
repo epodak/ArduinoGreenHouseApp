@@ -276,7 +276,7 @@ bool isTimeToLog()
 
 	if (settings[6] == '0'){ min = 10; }     //log lines: 6/h, 144/d, 4320/month
 	else if (settings[6] == '1'){ min = 30; }//log lines: 2/h, 48/d,  1488/month
-	else if (settings[6] == '2'){ min = 60; }//log lines: 1/h, 24/d,  744/month
+	//else if (settings[6] == '2'){ min = 60; }//log lines: 1/h, 24/d,  744/month
 	else { min = 60; } //default
 	/* get current date: */
 	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
@@ -342,7 +342,7 @@ void saveSettings(){
 				i++;
 			}
 		}
-		file.print("                      ");
+		file.print(F("                      "));
 		file.close();
 	}
 	else{
@@ -460,7 +460,7 @@ void checkForApiRequests()
 				if (strstr(request, "OPTIONS") != 0) {
 					ApiRequest_GetOptionsScreen(&client);
 				}
-				/*****************************home page*****************************************/
+				/***************************** home page ***************************************/
 				if (strstr(request, "GET / ") != 0) {
 					ApiRequest_GetHomePage(&client);
 				}
@@ -469,22 +469,14 @@ void checkForApiRequests()
 					ApiRequest_GetIndividualFile(&client, request + 5);
 					//ApiRequest_GetErrorScreen(&client, true, false);
 				}
-				/****************************** manifest file **********************************/
+				/****************************** login  (ANYONE) ********************************/
 				else if (strstr(request, "GET /admin?U=") != 0) {
 					ApiRequest_CheckLogInPin(&client, request + 13);
 				}
-				/****************************** manifest file (ANYONE) *************************/
+				/****************************** log file *************************/
 				else if (strstr(request, "GET /data") != 0) {
 					/* here you ask for data1501.jsn or data1502.jsn */
 					ApiRequest_GetIndividualFile(&client, request + 5);
-				}
-				/****************************** file content (ADMIN) ***************************/
-				else if (strstr(request, "GET /file/") != 0) {
-					ApiRequest_GetIndividualFile(&client, request + 10, putheader);
-				}
-				/***************************** list files  (ADMIN) *****************************/
-				else if (strstr(request, "GET /files") != 0) {
-					ApiRequest_GetFileList(&client, putheader);
 				}
 				/***************************** show clock **************************************/
 				else if (strstr(request, "GET /clock") != 0) {
@@ -493,6 +485,18 @@ void checkForApiRequests()
 				/***************************** show ram ****************************************/
 				else if (strstr(request, "GET /freeram") != 0) {
 					ApiRequest_GetRam(&client);
+				}
+				/****************************** system settings (ADMIN) ************************/
+				else if (strstr(request, "GET /sysadmin") != 0) {
+					ApiRequest_GetSystemSettings(&client, putheader);
+				}
+				/****************************** file content (ADMIN) ***************************/
+				else if (strstr(request, "GET /file/") != 0) {
+					ApiRequest_GetIndividualFileAdmin(&client, request + 10, putheader);
+				}
+				/***************************** list files  (ADMIN) *****************************/
+				else if (strstr(request, "GET /files") != 0) {
+					ApiRequest_GetFileList(&client, putheader);
 				}
 				/***************************** update settings  (ADMIN) ************************/
 				else if (strstr(request, "PUT /settings") != 0) {
@@ -524,6 +528,12 @@ void checkForApiRequests()
 
 void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* putheader)
 {
+	/* instead try read one line at the time and parse, "GET/PUT/POST/OPTION", "PP:" and  "Accept-Encoding: gzip, deflate" lines 
+				strstr(request, "GET / ") != 0
+				strstr(request, "PP: ") != 0
+				strstr(request, "Accept-Encoding: ") != 0  && strstr(request, "gzip") != 0 
+	*/
+
 	uint8_t index = 0;
 	uint8_t indexargs = 0;
 	bool parametersFound = false;
@@ -707,7 +717,7 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
 }
 
-void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename, char* putheader)
+void ApiRequest_GetIndividualFileAdmin(EthernetClient *client, char* filename, char* putheader)
 {
 	/* in PUT request pass is passed as header */
 	if (isPassCorrect(putheader + 4))
@@ -768,6 +778,41 @@ void ApiRequest_GetRam(EthernetClient *client)
 	(*client).print(F("\", \"max\":\""));
 	(*client).print(minMaxRam[1], DEC);
 	(*client).print(F("\" }"));
+}
+
+void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
+{
+	if (isPassCorrect(putheader + 4))
+	{
+		strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[7]))); //'settings.txt'
+		if (file.open(&root, logFileName, O_READ)) {
+			ApiRequest_GetSuccessHeader(client, ".JSON");
+
+			(*client).print(F("{ \"DeviceTime\":\""));
+			printCurrentStringDate(client);							
+			(*client).print(F("\", \"MinRam\" : \""));
+			(*client).print(minMaxRam[0], DEC);
+			(*client).print(F("b\", \"MaxRam\" : \""));
+			(*client).print(minMaxRam[1], DEC);
+			(*client).print(F("b\", \"RunningSince\" : \""));
+			printCurrentStringDateToClient(client, false);
+			(*client).print(F("\", \"Settings\" : \""));
+			int16_t c;
+			while ((c = file.read()) >= 0) {
+				if (c != 32) //trim spaces
+					(*client).print((char)c);
+			}
+			file.close();
+			(*client).print(F("\" }"));
+		}
+		else{			
+			ApiRequest_GetErrorScreen(client, true, true);
+		}
+	}
+	else{
+		ApiRequest_GetErrorScreen(client, false, true);
+	}
+
 }
 
 void ApiRequest_GetDateTime(EthernetClient *client)
@@ -1039,6 +1084,61 @@ void printCurrentStringDateToFile(SdFile *file, bool getCurrentTime)
 	//	file.print(day[dayOfWeek]);
 
 }
+void printCurrentStringDateToClient(EthernetClient *file, bool getCurrentTime)
+{
+	if (getCurrentTime){
+		//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+		// retrieve data from DS3231
+		readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
+	}
+	else{
+		//get time of the session start
+		year = session[0];
+		month = session[1];
+		dayOfMonth = session[2];
+		hour = session[3];
+		minute = session[4];
+		second = session[5];
+		dayOfWeek = session[6];
+	}
+
+	(*file).print(F("20"));
+	(*file).print(itoa(year, dateTimeConversionValue, DEC));
+	(*file).print(F("-"));
+	if (month < 10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(month, dateTimeConversionValue, DEC));
+	(*file).print(F("-"));
+	if (dayOfMonth < 10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(dayOfMonth, dateTimeConversionValue, DEC));
+	(*file).print(F(" "));
+	if (hour < 10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(hour, dateTimeConversionValue, DEC));
+	(*file).print(F(":"));
+	if (minute < 10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(minute, dateTimeConversionValue, DEC));
+	(*file).print(F(":"));
+	if (second < 10)
+	{
+		(*file).print(F("0"));
+	}
+	(*file).print(itoa(second, dateTimeConversionValue, DEC));
+
+	//	file.print(day[dayOfWeek]);
+
+}
+
 
 void printCurrentStringDate(EthernetClient *file)
 {
@@ -1209,27 +1309,26 @@ void serialShow(char* line){
 #endif
 }
 
-void serialShow(byte b){
-#ifdef SERIALDEBUG
-	Serial.println(b);
-#endif
-}
-
-
-void error(char* line){
-
-
-}
-
-void error(const char* line){
-
-}
-
-void error(const __FlashStringHelper* line)
-{
-
-
-}
+//void serialShow(byte b){
+//#ifdef SERIALDEBUG
+//	Serial.println(b);
+//#endif
+//}
+//
+//void error(char* line){
+//
+//
+//}
+//
+//void error(const char* line){
+//
+//}
+//
+//void error(const __FlashStringHelper* line)
+//{
+//
+//
+//}
 
 void logHttp(char* line, char* args){
 
