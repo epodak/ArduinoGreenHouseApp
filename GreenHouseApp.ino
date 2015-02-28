@@ -54,6 +54,8 @@ const prog_char string_8[] PROGMEM = "20";
 const prog_char string_9[] PROGMEM = "-";
 const prog_char string_10[] PROGMEM = ":";
 const prog_char string_11[] PROGMEM = " ";
+//const prog_char string_12[] PROGMEM = "{";
+//const prog_char string_13[] PROGMEM = "}";
 PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 {
 	string_0,
@@ -72,11 +74,18 @@ PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 
 /************ DYNAMIC VARS ************/
 /*
-datayyMM.jsn //has to be 8.3 format or it will error out! */
+datayyMM.jsn //has to be 8.3 format or it will error out! 
+*/
+
 #define LOGFILENAMELENGTH 13 
 char logFileName[LOGFILENAMELENGTH];
-char* sensorValue;
-char* dateTimeConversionValue;
+/*
+datayyMM.jsn //has to be 8.3 format or it will error out!
+2015-02-15 15:31:22  // also for loging time! 20
+*/
+#define DATETIMELENGTH 20 
+char datetimestring[DATETIMELENGTH];
+
 //const char* day[] = { F("NotSet!"), F("Sun"), F("Mon"), F("Tue"), F("Wed"), F("Thu"), F("Fri"), F("Sat") };
 
 byte lastLogTimeMin; //save minute of the last sensor log
@@ -103,9 +112,12 @@ digital from  0   to 1      ??
 ~digital from 0   to 1024   ??
 => 4 chars + str end = 5 chars  */
 #define SENSORVALUELENGTH 5
+char sensorValue[SENSORVALUELENGTH];
+
 /*2015 or 05 or 22:
 => 4 chars + str end = 5 chars */
 #define DATETIMECONVERSIONLENGTH 5
+char dateTimeConversionValue[DATETIMECONVERSIONLENGTH];
 /* on API web client call, how much of the web request string we need to know how to respond: (GET /... )
    should be the length of the largest api call (+1 for string end char \0):
    GET /file/12345678.123 or
@@ -119,14 +131,14 @@ char putheader[BUFSIZ];
 /* Our web server will timeout in this many ms */
 //#define TIMEOUTMS 2000
 
-//#define SERIALDEBUG
+#define SERIALDEBUG
 
 void setup() {
 
 	logInit();
 
-	sensorValue = (char*)malloc(sizeof(char) * SENSORVALUELENGTH);
-	dateTimeConversionValue = (char*)malloc(sizeof(char) * DATETIMECONVERSIONLENGTH);
+	//sensorValue = (char*)malloc(sizeof(char) * SENSORVALUELENGTH);
+	//dateTimeConversionValue = (char*)malloc(sizeof(char) * DATETIMECONVERSIONLENGTH);
 
 	pinMode(outputEthernetPin, OUTPUT);                       // set the SS pin as an output (necessary!)
 	digitalWrite(outputEthernetPin, HIGH);                    // but turn off the W5100 chip!
@@ -144,16 +156,21 @@ void setup() {
 
 void loop()
 {
+	serialShow("1");
 	//hopefully web request is not longer than a minute 
 	//so logger dont skip the time alloted to log the sensors
 	//since it looks for exact minute value to do the log
 	checkForApiRequests(); //check any API calls and respond 
-
+	//logRamUsage();
 	if (isTimeToLog()){ //check if minute is correct and if so - log sensor data.
 		LogSensors();      //log sensor input to log file		
 	}
+	//logRamUsage();
+	serialShow("2");
 	sessionTimeStamp(); //keep session running
+	serialShow("3");
 	logRamUsage();
+	serialShow("4");
 	delay(1000); //wait 1 sec
 }
 
@@ -185,6 +202,13 @@ void logRamUsage()
 	if (FreeRam() < minMaxRam[0]) {
 		minMaxRam[0] = FreeRam();
 	}
+
+#ifdef SERIALDEBUG
+	Serial.print(minMaxRam[1], DEC);
+	Serial.print(" ");
+	Serial.print(minMaxRam[0], DEC);
+	Serial.println();
+#endif
 }
 
 /*##################### SESSION #########################################*/
@@ -261,6 +285,9 @@ void sessionTimeStamp(){
 		file.close();
 	}
 	else{
+#ifdef SERIALDEBUG
+		Serial.println(logFileName);
+#endif
 		cryticalError(1);
 	}
 }
@@ -294,6 +321,7 @@ bool isTimeToLog()
 /*################# SETTINGS ####################################**/
 bool readSettings(){
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[7]))); //'settings.txt
+	Serial.println(logFileName);
 	if (file.open(&root, logFileName, O_READ)) {
 		if (file.isFile()){
 			int16_t c;
@@ -353,6 +381,7 @@ bool isPassCorrect(char *pass)
 #ifdef SERIALDEBUG
 	Serial.print("isPassCorrect:");
 	Serial.println(pass);
+	Serial.println((char*)settings);
 #endif
 	//return true;
 	//012345678 Header
@@ -674,6 +703,7 @@ void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
+		(*client).println((char*)settings);
 	}
 }
 
@@ -952,7 +982,7 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 	dir_t p;
 	bool first = true;
 	root.rewind();
-	(*client).println(F("{ \"files\" : [ {}"));
+	(*client).println(F("{ "));
 	while (root.readDir(p) > 0) {
 		// done if past last used entry
 		if (p.name[0] == DIR_NAME_FREE) break;
@@ -970,7 +1000,7 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 		else{
 			(*client).print(F(",")); //skip first time!
 		}
-		(*client).print(F(" { \"file\": \""));
+		(*client).print(F(" \""));
 		for (uint8_t i = 0; i < 11; i++) {
 			if (p.name[i] == ' ') continue;
 			if (i == 8) {
@@ -978,7 +1008,7 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 			}
 			(*client).print((char)p.name[i]);
 		}
-		(*client).print(F("\", \"size\": "));
+		(*client).print(F("\" : "));
 
 		// print file name with possible blank fill
 		//for (uint8_t i = 0; i < 11; i++) {
@@ -1015,9 +1045,8 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 			//(*client).print(F(" "));
 			(*client).print(p.fileSize);
 		}
-		(*client).println(F("}"));
 	}
-	(*client).println(F("] }"));
+	(*client).println(F(" }"));
 }
 
 //void printTwoDigits(EthernetClient *client, uint8_t v) {
@@ -1097,58 +1126,58 @@ char* getCurrentStringDateToClient(bool getCurrentTime)
 		second = session[5];
 		dayOfWeek = session[6];
 	}
-	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[8]))); //"20"
+	strcpy_P(datetimestring, (char*)pgm_read_word(&(string_table[8]))); //"20"
 	//(*file).print(F("20"));
-	strcat_P(logFileName, itoa(year, dateTimeConversionValue, DEC)); //'year'
+	strcat_P(datetimestring, itoa(year, dateTimeConversionValue, DEC)); //'year'
 	//(*file).print(itoa(year, dateTimeConversionValue, DEC));
-	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[9]))); //"-"
+	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[9]))); //"-"
 	//(*file).print(F("-"));
 	if (month < 10)
 	{
-		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //"0"
+		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
 		//(*file).print(F("0"));
 	}
-	strcat_P(logFileName, itoa(month, dateTimeConversionValue, DEC)); //'month'
+	strcat_P(datetimestring, itoa(month, dateTimeConversionValue, DEC)); //'month'
 	//(*file).print(itoa(month, dateTimeConversionValue, DEC));
-	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[9]))); //"-"
+	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[9]))); //"-"
 	//(*file).print(F("-"));
 	if (dayOfMonth < 10)
 	{
-		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //"0"
+		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
 		//(*file).print(F("0"));
 	}
-	strcat_P(logFileName, itoa(dayOfMonth, dateTimeConversionValue, DEC)); //'dayOfMonth'
+	strcat_P(datetimestring, itoa(dayOfMonth, dateTimeConversionValue, DEC)); //'dayOfMonth'
 	//(*file).print(itoa(dayOfMonth, dateTimeConversionValue, DEC));
-	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[11]))); //"0"
+	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[11]))); //"0"
 	//(*file).print(F(" "));
 	if (hour < 10)
 	{
-		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //"0"
+		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
 		//(*file).print(F("0"));
 	}
-	strcat_P(logFileName, itoa(hour, dateTimeConversionValue, DEC)); //'hour'
+	strcat_P(datetimestring, itoa(hour, dateTimeConversionValue, DEC)); //'hour'
 	//(*file).print(itoa(hour, dateTimeConversionValue, DEC));
-	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[10]))); //":"
+	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[10]))); //":"
 	//(*file).print(F(":"));
 	if (minute < 10)
 	{
-		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //"0"
+		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
 		//(*file).print(F("0"));
 	}
-	strcat_P(logFileName, itoa(minute, dateTimeConversionValue, DEC)); //'minute'
+	strcat_P(datetimestring, itoa(minute, dateTimeConversionValue, DEC)); //'minute'
 	//(*file).print(itoa(minute, dateTimeConversionValue, DEC));
-	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[10]))); //":"
+	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[10]))); //":"
 	//(*file).print(F(":"));
 	if (second < 10)
 	{
-		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //"0"
+		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
 		//(*file).print(F("0"));
 	}
-	strcat_P(logFileName, itoa(second, dateTimeConversionValue, DEC)); //'second'
+	strcat_P(datetimestring, itoa(second, dateTimeConversionValue, DEC)); //'second'
 	//(*file).print(itoa(second, dateTimeConversionValue, DEC));
 
 	//	file.print(day[dayOfWeek]);
-	return logFileName;
+	return datetimestring;
 
 }
 
@@ -1195,7 +1224,7 @@ char* getCurrentLogFileName(){
 
 void logInit(){
 #ifdef SERIALDEBUG
-	Serial.begin(9600);
+	Serial.begin(115200);
 #endif
 }
 

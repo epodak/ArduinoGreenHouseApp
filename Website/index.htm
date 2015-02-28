@@ -456,7 +456,10 @@
                         <div class="well">
                           <div class="row">
                             <div class="col-xs-12 text-left">
-                              <div id="filecontent"></div>
+                              <!--<div id="filecontent"></div>-->
+                              <ul>
+                                <li ng-repeat="(file,size) in items">{{file}}: {{size}}</li>
+                              </ul>
                             </div>
                           </div>
                         </div>
