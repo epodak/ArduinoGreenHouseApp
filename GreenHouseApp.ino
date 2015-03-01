@@ -449,10 +449,10 @@ void checkForApiRequests()
 				}
 				/***************************** home page ***************************************/
 				if (strstr(request, "GET / ") != 0) {
-					ApiRequest_GetFile(&client, "index.gz", NULL);
+					ApiRequest_GetFile(&client, "INDEX.GZ", NULL);
 				}
 				/****************************** manifest file **********************************/
-				else if (strstr(request, "GET /cache.app") != 0) {
+				else if (strstr(request, "GET /CACHE.APP") != 0) {
 					ApiRequest_GetFile(&client, request + 5, NULL);
 				}
 				/****************************** login  (ANYONE) ********************************/
@@ -680,8 +680,8 @@ void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 			(putheader == NULL &&
 				(
 					strstr(filename, "data") ||        //or asking data file
-					strstr(filename, "cache.app") ||   //or asking cache file
-					strstr(filename, "index.gz")       //or asking index file
+					strstr(filename, "CACHE.APP") ||   //or asking cache file
+					strstr(filename, "INDEX.GZ")       //or asking index file
 				)
 			)
 
