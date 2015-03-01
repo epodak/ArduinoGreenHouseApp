@@ -54,8 +54,7 @@ const prog_char string_8[] PROGMEM = "20";
 const prog_char string_9[] PROGMEM = "-";
 const prog_char string_10[] PROGMEM = ":";
 const prog_char string_11[] PROGMEM = " ";
-//const prog_char string_12[] PROGMEM = "{";
-//const prog_char string_13[] PROGMEM = "}";
+
 PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 {
 	string_0,
@@ -73,19 +72,12 @@ PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 };
 
 /************ DYNAMIC VARS ************/
-/*
+/* this variable is used for following operations:
 datayyMM.jsn //has to be 8.3 format or it will error out! 
+YYYY-MM-dd HH:mm:ss // is 20 chars
 */
-
-#define LOGFILENAMELENGTH 13 
+#define LOGFILENAMELENGTH 20 
 char logFileName[LOGFILENAMELENGTH];
-/*
-datayyMM.jsn //has to be 8.3 format or it will error out!
-2015-02-15 15:31:22  // also for loging time! 20
-*/
-#define DATETIMELENGTH 20 
-char datetimestring[DATETIMELENGTH];
-
 //const char* day[] = { F("NotSet!"), F("Sun"), F("Mon"), F("Tue"), F("Wed"), F("Thu"), F("Fri"), F("Sat") };
 
 byte lastLogTimeMin; //save minute of the last sensor log
@@ -131,14 +123,14 @@ char putheader[BUFSIZ];
 /* Our web server will timeout in this many ms */
 //#define TIMEOUTMS 2000
 
-#define SERIALDEBUG
+//#define SERIALDEBUG
 
 void setup() {
 
 	logInit();
 
 	//sensorValue = (char*)malloc(sizeof(char) * SENSORVALUELENGTH);
-	//dateTimeConversionValue = (char*)malloc(sizeof(char) * DATETIMECONVERSIONLENGTH);
+    //dateTimeConversionValue = (char*)malloc(sizeof(char) * DATETIMECONVERSIONLENGTH);
 
 	pinMode(outputEthernetPin, OUTPUT);                       // set the SS pin as an output (necessary!)
 	digitalWrite(outputEthernetPin, HIGH);                    // but turn off the W5100 chip!
@@ -156,21 +148,16 @@ void setup() {
 
 void loop()
 {
-	serialShow("1");
 	//hopefully web request is not longer than a minute 
 	//so logger dont skip the time alloted to log the sensors
 	//since it looks for exact minute value to do the log
 	checkForApiRequests(); //check any API calls and respond 
-	//logRamUsage();
+
 	if (isTimeToLog()){ //check if minute is correct and if so - log sensor data.
 		LogSensors();      //log sensor input to log file		
 	}
-	//logRamUsage();
-	serialShow("2");
 	sessionTimeStamp(); //keep session running
-	serialShow("3");
 	logRamUsage();
-	serialShow("4");
 	delay(1000); //wait 1 sec
 }
 
@@ -202,13 +189,6 @@ void logRamUsage()
 	if (FreeRam() < minMaxRam[0]) {
 		minMaxRam[0] = FreeRam();
 	}
-
-#ifdef SERIALDEBUG
-	Serial.print(minMaxRam[1], DEC);
-	Serial.print(" ");
-	Serial.print(minMaxRam[0], DEC);
-	Serial.println();
-#endif
 }
 
 /*##################### SESSION #########################################*/
@@ -285,9 +265,6 @@ void sessionTimeStamp(){
 		file.close();
 	}
 	else{
-#ifdef SERIALDEBUG
-		Serial.println(logFileName);
-#endif
 		cryticalError(1);
 	}
 }
@@ -321,7 +298,6 @@ bool isTimeToLog()
 /*################# SETTINGS ####################################**/
 bool readSettings(){
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[7]))); //'settings.txt
-	Serial.println(logFileName);
 	if (file.open(&root, logFileName, O_READ)) {
 		if (file.isFile()){
 			int16_t c;
@@ -348,7 +324,6 @@ bool readSettings(){
 		settings[6] = '2'; //log frequency in minutes ( 0=10min, 1=30min, 2=60min)
 		settings[7] = '1'; //keep log of free ram per session
 		settings[8] = '0'; //Reboot if can not write to SD
-		//strcpy(settings[0], "123451210"); //shorten the code here??
 		saveSettings();
 
 	}
@@ -367,7 +342,7 @@ void saveSettings(){
 				i++;
 			}
 		}
-		//file.print(F("                      "));
+		file.print(F("                      "));
 		file.close();
 	}
 	else{
@@ -381,7 +356,6 @@ bool isPassCorrect(char *pass)
 #ifdef SERIALDEBUG
 	Serial.print("isPassCorrect:");
 	Serial.println(pass);
-	Serial.println((char*)settings);
 #endif
 	//return true;
 	//012345678 Header
@@ -426,19 +400,6 @@ void LogSensors()
 			file.print(F("{ \"datetime\":\""));
 			printCurrentStringDateToFile(&file, true);
 			file.print(F("\", "));
-
-			//file.print(F(" \"Id\":\""));
-			//file.print(sessionId[0], DEC);
-			//file.print(sessionId[1], DEC);
-			//file.print(F("\", "));
-
-			//file.print(F(" \"lastboot\":\""));
-			//printCurrentStringDateToFile(&file, false);
-			//file.print(F("\", "));
-
-			//file.print(F(" \"freeRamInBytes\":\""));
-			//file.print(FreeRam());
-			//file.print(F("\", "));
 
 			for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
 				sensor = analogRead(analogPin);
@@ -488,12 +449,11 @@ void checkForApiRequests()
 				}
 				/***************************** home page ***************************************/
 				if (strstr(request, "GET / ") != 0) {
-					ApiRequest_GetFile(&client, "INDEX.GZ", NULL);
+					ApiRequest_GetFile(&client, "index.gz", NULL);
 				}
 				/****************************** manifest file **********************************/
 				else if (strstr(request, "GET /cache.app") != 0) {
 					ApiRequest_GetFile(&client, request + 5, NULL);
-					//ApiRequest_GetErrorScreen(&client, true, false);
 				}
 				/****************************** login  (ANYONE) ********************************/
 				else if (strstr(request, "GET /admin?U=") != 0) {
@@ -504,14 +464,6 @@ void checkForApiRequests()
 					/* here you ask for data1501.jsn or data1502.jsn */
 					ApiRequest_GetFile(&client, request + 5, NULL);
 				}
-				/***************************** show clock **************************************/
-				//else if (strstr(request, "GET /clock") != 0) {
-				//	ApiRequest_GetDateTime(&client);
-				//}
-				/***************************** show ram ****************************************/
-				//else if (strstr(request, "GET /freeram") != 0) {
-				//	ApiRequest_GetRam(&client);
-				//}
 				/****************************** system settings (ADMIN) ************************/
 				else if (strstr(request, "GET /sysadmin") != 0) {
 					ApiRequest_GetSystemSettings(&client, putheader);
@@ -531,7 +483,6 @@ void checkForApiRequests()
 				}
 				/***************************** update clock  (ADMIN) ***************************/
 				else if (strstr(request, "PUT /clock?U=") != 0) {
-					//?U=
 					ApiRequest_PutDateTime(&client, putheader, request + 13);
 				}
 				/***************************** reboot  (ADMIN)  ********************************/
@@ -557,6 +508,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 	/* instead try read one line at the time and parse, "GET/PUT/POST/OPTION", "PP:" and  "Accept-Encoding: gzip, deflate" lines 
 				strstr(request, "GET / ") != 0
 				strstr(request, "PP: ") != 0
+				following should only check on home page - and store in putheader array.so we can notify user if browser is old
 				strstr(request, "Accept-Encoding: ") != 0  && strstr(request, "gzip") != 0 
 	*/
 
@@ -703,30 +655,8 @@ void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
-		(*client).println((char*)settings);
 	}
 }
-
-//void ApiRequest_GetHomePage(EthernetClient *client)
-//{
-//	//if (file.open(&root, "INDEX.OLD", O_READ)) {
-//	//	ApiRequest_GetSuccessHeader(client, ".HTM");
-//
-//	// for this to work browser need to send this header: Accept-Encoding: gzip, deflate
-//	if (file.open(&root, "INDEX.GZ", O_READ)) {
-//		ApiRequest_GetSuccessHeader(client, ".GZ");
-//
-//		int16_t c;
-//		while ((c = file.read()) >= 0) {
-//			(*client).print((char)c);
-//		}
-//		file.close();
-//	}
-//	else{
-//		ApiRequest_GetErrorScreen(client, true, false);
-//		cryticalError(1); ///!!!!!!!!!!!!		
-//	}
-//}
 
 void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
@@ -734,9 +664,7 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 	if (isPassCorrect(putheader + 4))
 	{
 		ApiRequest_GetSuccessHeader(client, ".JSN");
-		// print all the files, use a helper to keep it clean
-		//(*client).println(F("<h2>Files:</h2>"));
-		ListFiles(client, LS_SIZE); //LS_SIZE | LS_DATE
+		ListFiles(client, LS_SIZE); //LS_SIZE 
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -747,21 +675,18 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 {
 	/* in PUT request pass is passed as header */
-	if (isPassCorrect(putheader + 4) ||    //if admin
+	if (
+		(putheader != NULL && isPassCorrect(putheader + 4)) ||  //if admin
 			(putheader == NULL &&
 				(
-				strstr(filename, "data") ||        //or asking data file
-				strstr(filename, "cache.app") ||   //or asking cache file
-				strstr(filename, "index.gz")       //or asking index file
+					strstr(filename, "data") ||        //or asking data file
+					strstr(filename, "cache.app") ||   //or asking cache file
+					strstr(filename, "index.gz")       //or asking index file
 				)
 			)
+
 		)
 	{
-		// this time no space after the /, so a sub-file!
-		//char *filename;
-
-		//Next 2 lines create pointer of sub string for filename and trims clientline
-		//filename = clientline + 10; // look after the "GET /file/" (10 chars)
 		// a little trick, look for the " HTTP/1.1" string and 
 		// turn the first character of the substring into a 0 to clear it out.
 		(strstr(filename, " HTTP"))[0] = 0;
@@ -776,74 +701,12 @@ void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 		}
 		else{
 			ApiRequest_GetErrorScreen(client, true, false);
-		}	
-	}else{
+		}
+	}
+	else{
 		ApiRequest_GetErrorScreen(client, false, false);
 	}
 }
-
-//void ApiRequest_GetIndividualFileAdmin(EthernetClient *client, char* filename, char* putheader)
-//{
-//	/* in PUT request pass is passed as header */
-//	if (isPassCorrect(putheader + 4))
-//	{
-//		// this time no space after the /, so a sub-file!
-//		//char *filename;
-//
-//		//Next 2 lines create pointer of sub string for filename and trims clientline
-//		//filename = clientline + 10; // look after the "GET /file/" (10 chars)
-//		// a little trick, look for the " HTTP/1.1" string and 
-//		// turn the first character of the substring into a 0 to clear it out.
-//		(strstr(filename, " HTTP"))[0] = 0;
-//
-//		if (file.open(&root, filename, O_READ)) {
-//			ApiRequest_GetSuccessHeader(client, filename);
-//			int16_t c;
-//			while ((c = file.read()) >= 0) {
-//				(*client).print((char)c);
-//			}
-//			file.close();
-//		}
-//		else{
-//			ApiRequest_GetErrorScreen(client, true, false);
-//		}
-//	}
-//	else{
-//		ApiRequest_GetErrorScreen(client, false, false);
-//	}
-//}
-//
-//void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
-//{	    
-//		(strstr(filename, " HTTP"))[0] = 0;		
-//
-//		if (file.open(&root, filename, O_READ)) {
-//			ApiRequest_GetSuccessHeader(client, filename);
-//			int16_t c;
-//			while ((c = file.read()) >= 0) {
-//				(*client).print((char)c);
-//			}
-//			file.close();
-//		}
-//		else{
-//			if (strstr(filename, "data")){
-//
-//			}
-//			else{
-//				ApiRequest_GetErrorScreen(client, true, false);
-//			}
-//		}
-//}
-////
-////void ApiRequest_GetRam(EthernetClient *client)
-////{
-////	ApiRequest_GetSuccessHeader(client, ".JSN");
-////	(*client).print(F("{ \"min\":\""));
-////	(*client).print(minMaxRam[0], DEC);
-////	(*client).print(F("\", \"max\":\""));
-////	(*client).print(minMaxRam[1], DEC);
-////	(*client).print(F("\" }"));
-////}
 
 void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 {
@@ -861,7 +724,6 @@ void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 			(*client).print(minMaxRam[1], DEC);
 			(*client).print(F("b\", \"RunningSince\" : \""));
 			printCurrentStringDateToClient(client, false);
-
 			(*client).print(F("\", \"Settings\" : \""));
 			int16_t c;
 			while ((c = file.read()) >= 0) {
@@ -880,16 +742,6 @@ void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 	}
 
 }
-//
-//void ApiRequest_GetDateTime(EthernetClient *client)
-//{
-//	ApiRequest_GetSuccessHeader(client, ".JSN");
-//	(*client).print(F("{ \"datetime\":\""));
-//	printCurrentStringDate(client);
-//	(*client).print(F("\" }"));
-//
-//	/*printCurrentStringDate_Debug(client);*/
-//}
 
 void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* parameters)
 {
@@ -943,7 +795,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 
 byte toDec(char A, char B)
 {
-	//logRamUsage();
+	logRamUsage();
 	/* convert each ASCII to byte value and add them 
 	Example:
 	VAR  A     ,B
@@ -982,7 +834,7 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 	dir_t p;
 	bool first = true;
 	root.rewind();
-	(*client).println(F("{ "));
+	(*client).print(F("{ ["));
 	while (root.readDir(p) > 0) {
 		// done if past last used entry
 		if (p.name[0] == DIR_NAME_FREE) break;
@@ -994,13 +846,13 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 		if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
 
 		// print any indent spaces
-		if(first){
+		if (first){
 			first = false;
 		}
 		else{
 			(*client).print(F(",")); //skip first time!
 		}
-		(*client).print(F(" \""));
+		(*client).print(F(" { \""));
 		for (uint8_t i = 0; i < 11; i++) {
 			if (p.name[i] == ' ') continue;
 			if (i == 8) {
@@ -1010,51 +862,15 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 		}
 		(*client).print(F("\" : "));
 
-		// print file name with possible blank fill
-		//for (uint8_t i = 0; i < 11; i++) {
-		//	if (p.name[i] == ' ') continue;
-		//	if (i == 8) {
-		//		(*client).print(F("."));
-		//	}
-		//	(*client).print((char)p.name[i]);
-		//}
-
-		//(*client).print(F("</a>"));
-
-		//if (DIR_IS_SUBDIR(&p)) {
-		//	(*client).print(F("/"));
-		//}
-
-		// print modify date/time if requested
-		//if (flags & LS_DATE) {
-		//	(*client).print(FAT_YEAR(p.lastWriteDate));
-		//	(*client).print(F("-"));
-		//	printTwoDigits(client, FAT_MONTH(p.lastWriteDate));
-		//	(*client).print(F("-"));
-		//	printTwoDigits(client, FAT_DAY(p.lastWriteDate));
-		//	(*client).print(F(" "));
-		//	printTwoDigits(client, FAT_HOUR(p.lastWriteTime));
-		//	(*client).print(F(":"));
-		//	printTwoDigits(client, FAT_MINUTE(p.lastWriteTime));
-		//	(*client).print(F(":"));
-		//	printTwoDigits(client, FAT_SECOND(p.lastWriteTime));
-		//	logRamUsage();
-		//}
 		// print size if requested
 		if (!DIR_IS_SUBDIR(&p) && (flags & LS_SIZE)) {
-			//(*client).print(F(" "));
 			(*client).print(p.fileSize);
 		}
+		(*client).println(F(" }"));
 	}
-	(*client).println(F(" }"));
-}
+	(*client).print(F("] }"));
 
-//void printTwoDigits(EthernetClient *client, uint8_t v) {
-//
-//	(*client).print('0' + v / 10);
-//	(*client).print('0' + v % 10);
-//	(*client).print(0);
-//}
+}
 
 /*############################ Clock #########################################*/
 
@@ -1103,15 +919,17 @@ void readDS3231time(byte *year, byte *month, byte *dayOfMonth, byte *hour, byte 
 //print military time as 2000-05-22 13:33:21
 void printCurrentStringDateToFile(SdFile *file, bool getCurrentTime)
 {
-	(*file).print(getCurrentStringDateToClient(getCurrentTime));
+	(*file).print(getStringDate(getCurrentTime));
 }
 void printCurrentStringDateToClient(EthernetClient *client, bool getCurrentTime)
-{	
-	(*client).print(getCurrentStringDateToClient(getCurrentTime));
-}
-char* getCurrentStringDateToClient(bool getCurrentTime)
 {
-	if (getCurrentTime){
+	(*client).print(getStringDate(getCurrentTime));
+}
+
+char* getStringDate(bool currentTime)
+{
+
+	if (currentTime){
 		//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 		// retrieve data from DS3231
 		readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
@@ -1126,59 +944,31 @@ char* getCurrentStringDateToClient(bool getCurrentTime)
 		second = session[5];
 		dayOfWeek = session[6];
 	}
-	strcpy_P(datetimestring, (char*)pgm_read_word(&(string_table[8]))); //"20"
-	//(*file).print(F("20"));
-	strcat_P(datetimestring, itoa(year, dateTimeConversionValue, DEC)); //'year'
-	//(*file).print(itoa(year, dateTimeConversionValue, DEC));
-	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[9]))); //"-"
-	//(*file).print(F("-"));
-	if (month < 10)
-	{
-		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
-		//(*file).print(F("0"));
-	}
-	strcat_P(datetimestring, itoa(month, dateTimeConversionValue, DEC)); //'month'
-	//(*file).print(itoa(month, dateTimeConversionValue, DEC));
-	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[9]))); //"-"
-	//(*file).print(F("-"));
-	if (dayOfMonth < 10)
-	{
-		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
-		//(*file).print(F("0"));
-	}
-	strcat_P(datetimestring, itoa(dayOfMonth, dateTimeConversionValue, DEC)); //'dayOfMonth'
-	//(*file).print(itoa(dayOfMonth, dateTimeConversionValue, DEC));
-	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[11]))); //"0"
-	//(*file).print(F(" "));
-	if (hour < 10)
-	{
-		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
-		//(*file).print(F("0"));
-	}
-	strcat_P(datetimestring, itoa(hour, dateTimeConversionValue, DEC)); //'hour'
-	//(*file).print(itoa(hour, dateTimeConversionValue, DEC));
-	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[10]))); //":"
-	//(*file).print(F(":"));
-	if (minute < 10)
-	{
-		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
-		//(*file).print(F("0"));
-	}
-	strcat_P(datetimestring, itoa(minute, dateTimeConversionValue, DEC)); //'minute'
-	//(*file).print(itoa(minute, dateTimeConversionValue, DEC));
-	strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[10]))); //":"
-	//(*file).print(F(":"));
-	if (second < 10)
-	{
-		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
-		//(*file).print(F("0"));
-	}
-	strcat_P(datetimestring, itoa(second, dateTimeConversionValue, DEC)); //'second'
-	//(*file).print(itoa(second, dateTimeConversionValue, DEC));
 
-	//	file.print(day[dayOfWeek]);
-	return datetimestring;
+	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[8]))); //"20"
+	appendNumber(year, 9); //"-"
+	appendNumber(month, 9); //"-"
+	appendNumber(dayOfMonth, 11); //" "
+	appendNumber(hour, 10); //":"
+	appendNumber(minute, 10); //":"
+	appendNumber(second, NULL);
 
+	//strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[11]))); //" "
+	//strcat_P(datetimestring, itoa(dayOfWeek, dateTimeConversionValue, DEC)); //'dayOfWeek'
+
+	return logFileName;
+}
+
+void appendNumber(byte number, int postfix) // 9 = "-", 11 = " ", 10 = ":"
+{
+	if (number < 10)
+	{
+		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //"0"
+	}
+	strcat(logFileName, itoa(number, dateTimeConversionValue, DEC));
+	if (postfix != NULL){
+		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[postfix])));
+	}
 }
 
 char* getCurrentLogFileName(){
@@ -1190,41 +980,33 @@ char* getCurrentLogFileName(){
 
 
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[1]))); //'data'
-	strcat(logFileName, itoa(year, dateTimeConversionValue, DEC));
-	if (month < 10)
-	{
-		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //'0'
-	}
-	strcat(logFileName, itoa(month, dateTimeConversionValue, DEC));
+	appendNumber(year, NULL);
+	appendNumber(month, NULL);
 	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[3]))); //'.jsn'
 
 	return logFileName;
 }
 
-//char* getCurrentErrorFileName(){
-//
-//	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
-//	// retrieve data from DS3231
-//	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
-//	// send it to the serial monitor
-//
-//	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[2]))); //'err_'
-//	strcat(logFileName, itoa(year, dateTimeConversionValue, DEC));
-//	if (month < 10)
-//	{
-//		strcat_P(logFileName, (char*)pgm_read_word(&(string_table[0]))); //'0'
-//	}
-//	strcat(logFileName, itoa(month, dateTimeConversionValue, DEC));
-//	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[4]))); //'.err'
-//
-//	return logFileName;
-//}
+char* getCurrentErrorFileName(){
+
+	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+	// retrieve data from DS3231
+	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
+	// send it to the serial monitor
+
+	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[2]))); //'err_'
+	appendNumber(year, NULL);
+	appendNumber(month, NULL);
+	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[4]))); //'.err'
+
+	return logFileName;
+}
 /****************************logging***************************************/
 
 
 void logInit(){
 #ifdef SERIALDEBUG
-	Serial.begin(115200);
+	Serial.begin(9600);
 #endif
 }
 
@@ -1295,7 +1077,7 @@ void cryticalError(byte Reason){
 	if (Reason == 1 && settings[8] == '1') //if option to reboot on SD error - then reboot
 	{
 #ifdef SERIALDEBUG
-		Serial.println(F("booting...."));
+		Serial.println("booting....");
 #endif
 		//Can not write error to any file because this is SD error.... write to eeprom?
 		resetFunc();  //call reset
