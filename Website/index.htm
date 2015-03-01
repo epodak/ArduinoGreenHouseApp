@@ -458,7 +458,7 @@
                             <div class="col-xs-12 text-left">
                               <!--<div id="filecontent"></div>-->
                               <ul>
-                                <li ng-repeat="(file,size) in items">{{file}}: {{size}}</li>
+                                <li ng-repeat="(file,size) in files">{{file}}: {{size}}</li>
                               </ul>
                             </div>
                           </div>
@@ -733,7 +733,7 @@
                               $scope.booting; //used to show reboot backdrop
                               $scope.loadFiles; //used to show files backdrop
                               $scope.newDate;
-
+                              $scope.files;
                               //functions:
                               $scope.load = load;
                               $scope.saveSettings = saveSettings;
@@ -793,9 +793,8 @@
                               function getFiles(){
                                 $scope.loadFiles = greenApiService.getFileList().then(
                                  function success(data) {
-                                   //$('#collapseFiles').collapse('toggle');
                                    $('#collapseFiles').collapse('show');
-                                   $('#filecontent').html(data.data);
+                                   $scope.files = data.data;
                                    NotifierService.info("Files loaded!", "Success");
                                    return false;
                                  },

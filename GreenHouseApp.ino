@@ -619,13 +619,13 @@ void ApiRequest_GetErrorScreen(EthernetClient *client, bool is404, bool isJson)
 	(*client).println();
 	if (is404){
 		if (isJson)
-			(*client).println(F("{ \"error\":\"404 - File Not Found\" }"));
+			(*client).println(F("{\"error\":\"404-File Not Found\"}"));
 		else
 			(*client).println(F("<h2>File Not Found!</h2>"));
 	}
 	else{
 		if (isJson)
-			(*client).println(F("{ \"error\":\"401 - Access Denied\" }"));
+			(*client).println(F("{ \"error\":\"401-Access Denied\" }"));
 		else
 			(*client).println(F("<h2>Access Denied</h2>"));
 	}
@@ -716,22 +716,22 @@ void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 		if (file.open(&root, logFileName, O_READ)) {
 			ApiRequest_GetSuccessHeader(client, ".JSON");
 
-			(*client).print(F("{ \"DeviceTime\":\""));
+			(*client).print(F("{\"DeviceTime\":\""));
 			printCurrentStringDateToClient(client, true);
-			(*client).print(F("\", \"MinRam\" : \""));
+			(*client).print(F("\",\"MinRam\":\""));
 			(*client).print(minMaxRam[0], DEC);
-			(*client).print(F("b\", \"MaxRam\" : \""));
+			(*client).print(F("b\",\"MaxRam\":\""));
 			(*client).print(minMaxRam[1], DEC);
-			(*client).print(F("b\", \"RunningSince\" : \""));
+			(*client).print(F("b\",\"RunningSince\":\""));
 			printCurrentStringDateToClient(client, false);
-			(*client).print(F("\", \"Settings\" : \""));
+			(*client).print(F("\",\"Settings\":\""));
 			int16_t c;
 			while ((c = file.read()) >= 0) {
 				if (c != 32) //trim spaces
 					(*client).print((char)c);
 			}
 			file.close();
-			(*client).print(F("\" }"));
+			(*client).print(F("\"}"));
 		}
 		else{			
 			ApiRequest_GetErrorScreen(client, true, true);
@@ -755,7 +755,7 @@ void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* param
 		saveSettings();
 
 		ApiRequest_GetSuccessHeader(client, ".JSN");
-		(*client).println(F("{ \"response\":\"Success\" }"));
+		(*client).println(F("{\"response\":\"Success\"}"));
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -784,9 +784,9 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 			toDec(parameters[12])                 //w			
 			);
 		ApiRequest_GetSuccessHeader(client, ".JSN");
-		(*client).print(F("{ \"response\":\"Success\", \"newdate\" : \""));
+		(*client).print(F("{\"response\":\"Success\",\"newdate\":\""));
 		printCurrentStringDateToClient(client, true);
-		(*client).println(F("\" }"));
+		(*client).println(F("\"}"));
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -815,7 +815,7 @@ void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 	if (isPassCorrect(arguments + 4))
 	{		
 		ApiRequest_GetSuccessHeader(client, ".JSN");
-		(*client).println(F("{ \"response\":\"Success\" }"));
+		(*client).println(F("{\"response\":\"Success\"}"));
 		delay(1);
 		(*client).stop();
 		resetFunc();
@@ -834,7 +834,7 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 	dir_t p;
 	bool first = true;
 	root.rewind();
-	(*client).print(F("{ ["));
+	(*client).print(F("{"));
 	while (root.readDir(p) > 0) {
 		// done if past last used entry
 		if (p.name[0] == DIR_NAME_FREE) break;
@@ -852,7 +852,7 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 		else{
 			(*client).print(F(",")); //skip first time!
 		}
-		(*client).print(F(" { \""));
+		(*client).print(F("\""));
 		for (uint8_t i = 0; i < 11; i++) {
 			if (p.name[i] == ' ') continue;
 			if (i == 8) {
@@ -860,15 +860,14 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 			}
 			(*client).print((char)p.name[i]);
 		}
-		(*client).print(F("\" : "));
+		(*client).print(F("\":"));
 
 		// print size if requested
 		if (!DIR_IS_SUBDIR(&p) && (flags & LS_SIZE)) {
 			(*client).print(p.fileSize);
 		}
-		(*client).println(F(" }"));
 	}
-	(*client).print(F("] }"));
+	(*client).print(F("}"));
 
 }
 
