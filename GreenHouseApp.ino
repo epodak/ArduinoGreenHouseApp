@@ -50,10 +50,11 @@ const prog_char string_4[] PROGMEM = ".err";
 const prog_char string_5[] PROGMEM = "session.txt";
 const prog_char string_6[] PROGMEM = "log.txt";
 const prog_char string_7[] PROGMEM = "settings.txt";
-//const prog_char string_8[] PROGMEM = "INDEX.GZ";
-//const prog_char string_9[] PROGMEM = ".GZ";
-//const prog_char string_10[] PROGMEM = "INDEX.HTM";
-//const prog_char string_11[] PROGMEM = ".HTM";
+const prog_char string_8[] PROGMEM = "20";
+const prog_char string_9[] PROGMEM = "-";
+const prog_char string_10[] PROGMEM = ":";
+const prog_char string_11[] PROGMEM = " ";
+
 PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 {
 	string_0,
@@ -63,11 +64,11 @@ PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 	string_4,
 	string_5,
 	string_6,
-	string_7 //,
-	//string_8,
-	//string_9,
-	//string_10,
-	//string_11
+	string_7,
+	string_8,
+	string_9,
+	string_10,
+	string_11
 };
 
 /************ DYNAMIC VARS ************/
@@ -245,19 +246,15 @@ void sessionTimeStamp(){
 			file.print(F("{ \"Session\":\""));
 			file.print(sessionId[0], DEC);
 			file.print(sessionId[1], DEC);
-			file.print(F("\", "));
+			file.print(F("\", \"FreeRam\":\" { \"From\" :\""));
 
-			file.print(F("\"FreeRam\":\" { "));
-			file.print(F("\"From\" :\""));
 			file.print(minMaxRam[0], DEC);
 			file.print(F("\", \"To\" :\""));
 			file.print(minMaxRam[1], DEC);
-			file.print(F("\" }, "));
+			file.print(F("\" }, \"StartedTime\":\""));
 
-			file.print(F("\"StartedTime\":\""));
 			printCurrentStringDateToFile(&file, false); //print session start time from session ID
-			file.print(F("\", "));
-			file.print(F("\"EndedTime\":\""));
+			file.print(F("\", \"EndedTime\":\""));
 			printCurrentStringDateToFile(&file, true); //print current time
 			file.print(F("\" }                            ")); //space to delete trailing chars from previous session
 
@@ -401,10 +398,10 @@ void LogSensors()
 			printCurrentStringDateToFile(&file, true);
 			file.print(F("\", "));
 
-			file.print(F(" \"Id\":\""));
+			/*file.print(F(" \"Id\":\""));
 			file.print(sessionId[0], DEC);
 			file.print(sessionId[1], DEC);
-			file.print(F("\", "));
+			file.print(F("\", "));*/
 
 			//file.print(F(" \"lastboot\":\""));
 			//printCurrentStringDateToFile(&file, false);
@@ -706,13 +703,13 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 	/* in PUT request pass is passed as header:*/
 	if (isPassCorrect(putheader + 4))
 	{
-		ApiRequest_GetSuccessHeader(client, ".HTM");
+		ApiRequest_GetSuccessHeader(client, ".JSN");
 		// print all the files, use a helper to keep it clean
-		(*client).println(F("<h2>Files:</h2>"));
+		//(*client).println(F("<h2>Files:</h2>"));
 		ListFiles(client, LS_SIZE); //LS_SIZE | LS_DATE
 	}
 	else{
-		ApiRequest_GetErrorScreen(client, false, false);
+		ApiRequest_GetErrorScreen(client, false, true);
 	}
 
 }
@@ -914,9 +911,9 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 	// This code is just copied from SdFile.cpp in the SDFat library
 	// and tweaked to print to the client output in html!
 	dir_t p;
-
+	bool first = true;
 	root.rewind();
-	(*client).println(F("<ul>"));
+	(*client).print(F("{ ["));
 	while (root.readDir(p) > 0) {
 		// done if past last used entry
 		if (p.name[0] == DIR_NAME_FREE) break;
@@ -928,7 +925,13 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 		if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
 
 		// print any indent spaces
-		(*client).print(F("<li><a href=\"file/"));
+		if (first){
+			first = false;
+		}
+		else{
+			(*client).print(F(",")); //skip first time!
+		}
+		(*client).print(F(" { \""));
 		for (uint8_t i = 0; i < 11; i++) {
 			if (p.name[i] == ' ') continue;
 			if (i == 8) {
@@ -936,46 +939,47 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 			}
 			(*client).print((char)p.name[i]);
 		}
-		(*client).print(F("\">"));
+		(*client).print(F("\" : "));
 
 		// print file name with possible blank fill
-		for (uint8_t i = 0; i < 11; i++) {
+		/*for (uint8_t i = 0; i < 11; i++) {
 			if (p.name[i] == ' ') continue;
 			if (i == 8) {
 				(*client).print(F("."));
 			}
 			(*client).print((char)p.name[i]);
-		}
+		}*/
 
-		(*client).print(F("</a>"));
+		//(*client).print(F("</a>"));
 
-		if (DIR_IS_SUBDIR(&p)) {
-			(*client).print(F("/"));
-		}
+		//if (DIR_IS_SUBDIR(&p)) {
+		//	(*client).print(F("/"));
+		//}
 
 		// print modify date/time if requested
-		if (flags & LS_DATE) {
-			(*client).print(FAT_YEAR(p.lastWriteDate));
-			(*client).print(F("-"));
-			printTwoDigits(client, FAT_MONTH(p.lastWriteDate));
-			(*client).print(F("-"));
-			printTwoDigits(client, FAT_DAY(p.lastWriteDate));
-			(*client).print(F(" "));
-			printTwoDigits(client, FAT_HOUR(p.lastWriteTime));
-			(*client).print(F(":"));
-			printTwoDigits(client, FAT_MINUTE(p.lastWriteTime));
-			(*client).print(F(":"));
-			printTwoDigits(client, FAT_SECOND(p.lastWriteTime));
-			logRamUsage();
-		}
+		//if (flags & LS_DATE) {
+		//	(*client).print(FAT_YEAR(p.lastWriteDate));
+		//	(*client).print(F("-"));
+		//	printTwoDigits(client, FAT_MONTH(p.lastWriteDate));
+		//	(*client).print(F("-"));
+		//	printTwoDigits(client, FAT_DAY(p.lastWriteDate));
+		//	(*client).print(F(" "));
+		//	printTwoDigits(client, FAT_HOUR(p.lastWriteTime));
+		//	(*client).print(F(":"));
+		//	printTwoDigits(client, FAT_MINUTE(p.lastWriteTime));
+		//	(*client).print(F(":"));
+		//	printTwoDigits(client, FAT_SECOND(p.lastWriteTime));
+		//	logRamUsage();
+		//}
 		// print size if requested
 		if (!DIR_IS_SUBDIR(&p) && (flags & LS_SIZE)) {
-			(*client).print(F(" "));
+			//(*client).print(F(" "));
 			(*client).print(p.fileSize);
 		}
-		(*client).println(F("</li>"));
+		(*client).println(F(" }"));
 	}
-	(*client).println(F("</ul>"));
+	(*client).print(F("] }"));
+
 }
 
 void printTwoDigits(EthernetClient *client, uint8_t v) {
