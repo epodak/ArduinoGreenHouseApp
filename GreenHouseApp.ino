@@ -38,6 +38,7 @@ SdFile file;
 
 /************ TIMER STUFF *************/
 byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+char datetimestring[20];
 
 /************ PROGMEM STUFF *************/
 //for every copy of the program to the device it is writing to flash memmory (progmem) 
@@ -729,7 +730,7 @@ void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 			ApiRequest_GetSuccessHeader(client, ".JSON");
 
 			(*client).print(F("{ \"DeviceTime\":\""));
-			printCurrentStringDate(client);							
+			printCurrentStringDateToClient(client, true);
 			(*client).print(F("\", \"MinRam\" : \""));
 			(*client).print(minMaxRam[0], DEC);
 			(*client).print(F("b\", \"MaxRam\" : \""));
@@ -797,7 +798,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 			);
 		ApiRequest_GetSuccessHeader(client, ".JSN");
 		(*client).print(F("{ \"response\":\"Success\", \"newdate\" : \""));
-		printCurrentStringDate(client);
+		printCurrentStringDateToClient(client, true);
 		(*client).println(F("\" }"));
 	}
 	else{
@@ -931,61 +932,17 @@ void readDS3231time(byte *year, byte *month, byte *dayOfMonth, byte *hour, byte 
 //print military time as 2000-05-22 13:33:21
 void printCurrentStringDateToFile(SdFile *file, bool getCurrentTime)
 {
-	if (getCurrentTime){
-		//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
-		// retrieve data from DS3231
-		readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);		
-	}
-	else{
-		//get time of the session start
-		year = session[0];
-		month = session[1];
-		dayOfMonth = session[2];
-		hour = session[3];
-		minute = session[4];
-		second = session[5];
-		dayOfWeek = session[6];
-	}
-
-	(*file).print(F("20"));
-	(*file).print(itoa(year, dateTimeConversionValue, DEC));
-	(*file).print(F("-"));
-	if (month < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(month, dateTimeConversionValue, DEC));
-	(*file).print(F("-"));
-	if (dayOfMonth < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(dayOfMonth, dateTimeConversionValue, DEC));
-	(*file).print(F(" "));
-	if (hour < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(hour, dateTimeConversionValue, DEC));
-	(*file).print(F(":"));
-	if (minute < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(minute, dateTimeConversionValue, DEC));
-	(*file).print(F(":"));
-	if (second < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(second, dateTimeConversionValue, DEC));
-
-	//	file.print(day[dayOfWeek]);
-
+	(*file).print(getStringDate(getCurrentTime));
 }
-void printCurrentStringDateToClient(EthernetClient *file, bool getCurrentTime)
+void printCurrentStringDateToClient(EthernetClient *client, bool getCurrentTime)
 {
-	if (getCurrentTime){
+	(*client).print(getStringDate(getCurrentTime));
+}
+
+char* getStringDate(bool currentTime)
+{
+
+	if (currentTime){
 		//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 		// retrieve data from DS3231
 		readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
@@ -1001,86 +958,30 @@ void printCurrentStringDateToClient(EthernetClient *file, bool getCurrentTime)
 		dayOfWeek = session[6];
 	}
 
-	(*file).print(F("20"));
-	(*file).print(itoa(year, dateTimeConversionValue, DEC));
-	(*file).print(F("-"));
-	if (month < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(month, dateTimeConversionValue, DEC));
-	(*file).print(F("-"));
-	if (dayOfMonth < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(dayOfMonth, dateTimeConversionValue, DEC));
-	(*file).print(F(" "));
-	if (hour < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(hour, dateTimeConversionValue, DEC));
-	(*file).print(F(":"));
-	if (minute < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(minute, dateTimeConversionValue, DEC));
-	(*file).print(F(":"));
-	if (second < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(second, dateTimeConversionValue, DEC));
+	strcpy_P(datetimestring, (char*)pgm_read_word(&(string_table[8]))); //"20"
+	appendNumber(year, 9); //"-"
+	appendNumber(month, 9); //"-"
+	appendNumber(dayOfMonth, 11); //" "
+	appendNumber(hour, 10); //":"
+	appendNumber(minute, 10); //":"
+	appendNumber(second, NULL);
 
-	//	file.print(day[dayOfWeek]);
+	//strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[11]))); //" "
+	//strcat_P(datetimestring, itoa(dayOfWeek, dateTimeConversionValue, DEC)); //'dayOfWeek'
 
+	return datetimestring;
 }
 
-
-void printCurrentStringDate(EthernetClient *file)
+void appendNumber(byte number, int postfix) // 9 = "-", 11 = " ", 10 = ":"
 {
-
-	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
-	// retrieve data from DS3231
-	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
-	// send it to the serial monitor
-
-	(*file).print(F("20"));
-	(*file).print(itoa(year, dateTimeConversionValue, DEC));
-	(*file).print(F("-"));
-	if (month < 10)
+	if (number < 10)
 	{
-		(*file).print(F("0"));
+		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[0]))); //"0"
 	}
-	(*file).print(itoa(month, dateTimeConversionValue, DEC));
-	(*file).print(F("-"));
-	if (dayOfMonth < 10)
-	{
-		(*file).print(F("0"));
+	strcat(datetimestring, itoa(number, dateTimeConversionValue, DEC));
+	if (postfix != NULL){
+		strcat_P(datetimestring, (char*)pgm_read_word(&(string_table[postfix])));
 	}
-	(*file).print(itoa(dayOfMonth, dateTimeConversionValue, DEC));
-	(*file).print(F(" "));
-	if (hour < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(hour, dateTimeConversionValue, DEC));
-	(*file).print(F(":"));
-	if (minute < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(minute, dateTimeConversionValue, DEC));
-	(*file).print(F(":"));
-	if (second < 10)
-	{
-		(*file).print(F("0"));
-	}
-	(*file).print(itoa(second, dateTimeConversionValue, DEC));
-
-
 }
 
 //void printCurrentStringDate_Debug(EthernetClient *file)
