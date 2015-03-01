@@ -459,11 +459,12 @@ void checkForApiRequests()
 				}
 				/***************************** home page ***************************************/
 				if (strstr(request, "GET / ") != 0) {
-					ApiRequest_GetHomePage(&client);
+					ApiRequest_GetFile(&client, "index.gz", NULL);
 				}
 				/****************************** manifest file **********************************/
 				else if (strstr(request, "GET /cache.app") != 0) {
-					ApiRequest_GetIndividualFile(&client, request + 5);
+					//ApiRequest_GetIndividualFile(&client, request + 5);
+					ApiRequest_GetFile(&client, request + 5, NULL);
 					//ApiRequest_GetErrorScreen(&client, true, false);
 				}
 				/****************************** login  (ANYONE) ********************************/
@@ -473,15 +474,7 @@ void checkForApiRequests()
 				/****************************** log file *************************/
 				else if (strstr(request, "GET /data") != 0) {
 					/* here you ask for data1501.jsn or data1502.jsn */
-					ApiRequest_GetIndividualFile(&client, request + 5);
-				}
-				/***************************** show clock **************************************/
-				else if (strstr(request, "GET /clock") != 0) {
-					ApiRequest_GetDateTime(&client);
-				}
-				/***************************** show ram ****************************************/
-				else if (strstr(request, "GET /freeram") != 0) {
-					ApiRequest_GetRam(&client);
+					ApiRequest_GetFile(&client, request + 5, NULL);
 				}
 				/****************************** system settings (ADMIN) ************************/
 				else if (strstr(request, "GET /sysadmin") != 0) {
@@ -489,7 +482,7 @@ void checkForApiRequests()
 				}
 				/****************************** file content (ADMIN) ***************************/
 				else if (strstr(request, "GET /file/") != 0) {
-					ApiRequest_GetIndividualFileAdmin(&client, request + 10, putheader);
+					ApiRequest_GetFile(&client, request + 10, putheader);
 				}
 				/***************************** list files  (ADMIN) *****************************/
 				else if (strstr(request, "GET /files") != 0) {
@@ -677,36 +670,13 @@ void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 	}
 }
 
-void ApiRequest_GetHomePage(EthernetClient *client)
-{
-	//if (file.open(&root, "INDEX.OLD", O_READ)) {
-	//	ApiRequest_GetSuccessHeader(client, ".HTM");
-
-	// for this to work browser need to send this header: Accept-Encoding: gzip, deflate
-	if (file.open(&root, "INDEX.GZ", O_READ)) {
-		ApiRequest_GetSuccessHeader(client, ".GZ");
-
-		int16_t c;
-		while ((c = file.read()) >= 0) {
-			(*client).print((char)c);
-		}
-		file.close();
-	}
-	else{
-		ApiRequest_GetErrorScreen(client, true, false);
-		cryticalError(1); ///!!!!!!!!!!!!		
-	}
-}
-
 void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
 	/* in PUT request pass is passed as header:*/
 	if (isPassCorrect(putheader + 4))
 	{
 		ApiRequest_GetSuccessHeader(client, ".JSN");
-		// print all the files, use a helper to keep it clean
-		//(*client).println(F("<h2>Files:</h2>"));
-		ListFiles(client, LS_SIZE); //LS_SIZE | LS_DATE
+		ListFiles(client, LS_SIZE); //LS_SIZE 
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -714,16 +684,21 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
 }
 
-void ApiRequest_GetIndividualFileAdmin(EthernetClient *client, char* filename, char* putheader)
+void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 {
 	/* in PUT request pass is passed as header */
-	if (isPassCorrect(putheader + 4))
-	{
-		// this time no space after the /, so a sub-file!
-		//char *filename;
+	if (
+		(putheader != NULL && isPassCorrect(putheader + 4)) ||  //if admin
+			(putheader == NULL &&
+				(
+					strstr(filename, "data") ||        //or asking data file
+					strstr(filename, "cache.app") ||   //or asking cache file
+					strstr(filename, "index.gz")       //or asking index file
+				)
+			)
 
-		//Next 2 lines create pointer of sub string for filename and trims clientline
-		//filename = clientline + 10; // look after the "GET /file/" (10 chars)
+		)
+	{
 		// a little trick, look for the " HTTP/1.1" string and 
 		// turn the first character of the substring into a 0 to clear it out.
 		(strstr(filename, " HTTP"))[0] = 0;
@@ -743,38 +718,6 @@ void ApiRequest_GetIndividualFileAdmin(EthernetClient *client, char* filename, c
 	else{
 		ApiRequest_GetErrorScreen(client, false, false);
 	}
-}
-
-void ApiRequest_GetIndividualFile(EthernetClient *client, char* filename)
-{	    
-		(strstr(filename, " HTTP"))[0] = 0;		
-
-		if (file.open(&root, filename, O_READ)) {
-			ApiRequest_GetSuccessHeader(client, filename);
-			int16_t c;
-			while ((c = file.read()) >= 0) {
-				(*client).print((char)c);
-			}
-			file.close();
-		}
-		else{
-			if (strstr(filename, "data")){
-
-			}
-			else{
-				ApiRequest_GetErrorScreen(client, true, false);
-			}
-		}
-}
-
-void ApiRequest_GetRam(EthernetClient *client)
-{
-	ApiRequest_GetSuccessHeader(client, ".JSN");
-	(*client).print(F("{ \"min\":\""));
-	(*client).print(minMaxRam[0], DEC);
-	(*client).print(F("\", \"max\":\""));
-	(*client).print(minMaxRam[1], DEC);
-	(*client).print(F("\" }"));
 }
 
 void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
@@ -810,16 +753,6 @@ void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 		ApiRequest_GetErrorScreen(client, false, true);
 	}
 
-}
-
-void ApiRequest_GetDateTime(EthernetClient *client)
-{
-	ApiRequest_GetSuccessHeader(client, ".JSN");
-	(*client).print(F("{ \"datetime\":\""));
-	printCurrentStringDate(client);
-	(*client).print(F("\" }"));
-
-	/*printCurrentStringDate_Debug(client);*/
 }
 
 void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* parameters)
@@ -882,7 +815,7 @@ byte toDec(char A, char B)
 	DEC: 49    ,53    
 	BIN: 110001,110101	
 	*/
-	return ((A - '0') * 10 + (B - '0'));
+	return (toDec(A) * 10 + (B - '0'));
 }
 byte toDec(char A)
 {
@@ -941,52 +874,14 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 		}
 		(*client).print(F("\" : "));
 
-		// print file name with possible blank fill
-		/*for (uint8_t i = 0; i < 11; i++) {
-			if (p.name[i] == ' ') continue;
-			if (i == 8) {
-				(*client).print(F("."));
-			}
-			(*client).print((char)p.name[i]);
-		}*/
-
-		//(*client).print(F("</a>"));
-
-		//if (DIR_IS_SUBDIR(&p)) {
-		//	(*client).print(F("/"));
-		//}
-
-		// print modify date/time if requested
-		//if (flags & LS_DATE) {
-		//	(*client).print(FAT_YEAR(p.lastWriteDate));
-		//	(*client).print(F("-"));
-		//	printTwoDigits(client, FAT_MONTH(p.lastWriteDate));
-		//	(*client).print(F("-"));
-		//	printTwoDigits(client, FAT_DAY(p.lastWriteDate));
-		//	(*client).print(F(" "));
-		//	printTwoDigits(client, FAT_HOUR(p.lastWriteTime));
-		//	(*client).print(F(":"));
-		//	printTwoDigits(client, FAT_MINUTE(p.lastWriteTime));
-		//	(*client).print(F(":"));
-		//	printTwoDigits(client, FAT_SECOND(p.lastWriteTime));
-		//	logRamUsage();
-		//}
 		// print size if requested
 		if (!DIR_IS_SUBDIR(&p) && (flags & LS_SIZE)) {
-			//(*client).print(F(" "));
 			(*client).print(p.fileSize);
 		}
 		(*client).println(F(" }"));
 	}
 	(*client).print(F("] }"));
 
-}
-
-void printTwoDigits(EthernetClient *client, uint8_t v) {
-
-	(*client).print('0' + v / 10);
-	(*client).print('0' + v % 10);
-	(*client).print(0);
 }
 
 /*############################ Clock #########################################*/
@@ -1184,8 +1079,7 @@ void printCurrentStringDate(EthernetClient *file)
 		(*file).print(F("0"));
 	}
 	(*file).print(itoa(second, dateTimeConversionValue, DEC));
-	// (*file).print(F(" "));
-	// (*file).print(dayOfWeek);
+
 
 }
 
