@@ -14,6 +14,13 @@
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.css" />
 
   <style type="text/css">
+    textarea#fileContent {
+     width: 100%;
+     height: 200px;
+     -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+     -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+     box-sizing: border-box;         /* Opera/IE 8+ */
+    }
     .green {
       color: green;
     }
@@ -72,8 +79,6 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.0.0/js/bootstrap-datetimepicker.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular-busy/4.1.2/angular-busy.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
-
-  <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.3.12/angular-mocks.js"></script> <!-- remove after mocking is done -->
 
   <script type="text/ng-template" id="header.html">
     <nav class="navbar navbar-default text-center">
@@ -396,7 +401,7 @@
                                  ng-minlength="5"
                                  ng-match="pass.newPass">
                         </div>
-                        <div class="row" style="margin-top: 0px;">
+                        <div class="row" style="margin-top:0;">
                           <div class="col-sm-4">
                             <button type="submit"
                                     class="btn btn-primary"
@@ -451,22 +456,32 @@
                 <div cg-busy="loadFiles">
                   <div class=" row">
                     <div class="col-xs-12 text-center">
-                      <button type="button" class="btn btn-default" data-toggle="collapse" data-target="#collapseFiles" aria-expanded="false" aria-controls="collapseFiles" ng-click="getFiles()"><i class="fa "></i> View Files</button>  <!--ng-click="getFiles()"-->
+                      <button type="button" class="btn btn-default" data-toggle="collapse" data-target="#collapseFiles" aria-expanded="false" aria-controls="collapseFiles" ng-click="getFiles()"><i class="fa "></i> {{ViewFilesButtonName}}</button>
                       <div class="collapse" id="collapseFiles">
                         <div class="well">
                           <div class="row">
                             <div class="col-xs-12 text-left">
-                              <!--<div id="filecontent"></div>-->
-                              <ul>
-                                <li ng-repeat="(file,size) in files">{{file}}: {{size}}</li>
-                              </ul>
+                              <div class="row">
+                                <div class="col-xs-4 text-left">
+                                  <div class="row" ng-repeat="(file,size) in files">
+                                    <div class="col-xs-6 text-left">
+                                      <a ng-click="getFile(file)">{{file}} </a>
+                                    </div>
+                                    <div class="col-xs-6 text-left">
+                                      {{size}}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-xs-8 text-left">
+                                  <textarea ng-model="fileContent" type="text" id="fileContent" readonly="readonly"></textarea>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
               </td>
             </tr>
           </tbody>
@@ -549,6 +564,7 @@
 
           getSensorData: getSensorData,
           getFileList: getFileList,
+          getFile: getFile,
 
           doReboot: doReboot
         });
@@ -588,21 +604,11 @@
           return $http({
             method: "get",
             headers: { 'PP': sessionStorage.getItem('pass') },
-            //url: host + '/file/SETTINGS.TXT'
             url: host + '/sysadmin'
           });
         }
         //#endregion
         ////#region getTime
-        //function getTime() {
-
-        //  return $http({
-        //    method: "get",
-        //    headers: { 'PP': sessionStorage.getItem('pass') },
-        //    url: host + '/clock'
-        //  });
-        //}
-        ////#endregion
         //#region setTime
         function setTime(t) {
 
@@ -627,7 +633,7 @@
         //#endregion
         //#region getFileList
         function getFileList() {
-          
+
           return $http({
             method: "get",
             headers: { 'PP': sessionStorage.getItem('pass') },
@@ -635,7 +641,19 @@
           });
         }
         //#endregion
-        
+        //#region getFile
+        function getFile(filename) {          
+          return $http({
+            method: "get",
+            headers: { 'PP': sessionStorage.getItem('pass') },
+            url: host + '/file/' + filename,
+            transformResponse: [function (data) {
+              // Overwrite html and json request to raw data return
+              return data;
+            }]
+          });
+        }
+        //#endregion
 
       }]);
 
@@ -726,6 +744,7 @@
                                 confirmPass: ''
                               };
 
+                              $scope.ViewFilesButtonName = "View Files";
                               $scope.loaded = true; //show alternate screen if API fails to refresh
                               $scope.time; //stores moment format of the date on the device
                               $scope.stopTime; //used to stop runningTime counter if needed
@@ -749,6 +768,7 @@
                               $scope.reboot = reboot;
 
                               $scope.getFiles = getFiles;
+                              $scope.getFile = getFile;
 
                               $scope.logOut = logOut;
 
@@ -790,12 +810,14 @@
                                   });
                               }
 
-                              function getFiles(){
+                              function getFiles() {
                                 $scope.loadFiles = greenApiService.getFileList().then(
                                  function success(data) {
-                                   $('#collapseFiles').collapse('show');
+                                   $('#collapseFiles').collapse('show');                                   
                                    $scope.files = data.data;
+                                   $scope.fileContent = "";
                                    NotifierService.info("Files loaded!", "Success");
+                                   $scope.ViewFilesButtonName = "Refresh";
                                    return false;
                                  },
                                  function error(e) {
@@ -803,6 +825,21 @@
                                    return false;
                                  });
                               }
+
+                              function getFile(filename) {
+                                $scope.loadFiles = greenApiService.getFile(filename).then(
+                                 function success(data) {
+                                   $scope.fileContent = data.data;
+                                   //$('#fileContent').html(data.data);
+                                   NotifierService.info("File loaded!", "Success");
+                                   return false;
+                                 },
+                                 function error(e) {
+                                   NotifierService.error("could not load file. Api failed.", "Error");
+                                   return false;
+                                 });
+                              }
+
 
                               function saveSettings() {
                                 //build query:
@@ -887,9 +924,9 @@
                                     //        $scope.time = moment(data.data.datetime, "YYYY-MM-DD HH:mm:ss");
                                     //        $scope.stopTime = $interval(runningTime, 1000);
                                     //      },
-                                    //      function error(e) {                                           
+                                    //      function error(e) {
                                     //          NotifierService.error("Can not load time.", "Error");
-                                    //          $scope.loaded = false;                                            
+                                    //          $scope.loaded = false;
                                     //      });
                                   },
                                   function error(e) {

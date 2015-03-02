@@ -246,16 +246,18 @@ void sessionTimeStamp(){
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[5]))); //'session.txt'
 	if (file.open(&root, logFileName, O_CREAT | O_WRITE)) {
 		if (file.isFile()){
-			file.print(F("{ \"Session\":\""));
+			file.print(F("{ \"Session\":"));
 			file.print(sessionId[0], DEC);
 			file.print(sessionId[1], DEC);
-			file.print(F("\", \"FreeRam\":\" { \"From\" :\""));
 
-			file.print(minMaxRam[0], DEC);
-			file.print(F("\", \"To\" :\""));
-			file.print(minMaxRam[1], DEC);
-			file.print(F("\" }, \"StartedTime\":\""));
+			if (settings[7] == '1'){ //if logging ram?
+				file.print(F(",\"MinRam\":"));
+				file.print(minMaxRam[0], DEC);
+				file.print(F(",\"MaxRam\" :"));
+				file.print(minMaxRam[1], DEC);
+			}
 
+			file.print(F(",\"StartedTime\":\""));
 			printCurrentStringDateToFile(&file, false); //print session start time from session ID
 			file.print(F("\", \"EndedTime\":\""));
 			printCurrentStringDateToFile(&file, true); //print current time
