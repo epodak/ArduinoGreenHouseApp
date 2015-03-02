@@ -320,10 +320,10 @@ bool readSettings(){
 		settings[2] = '3';
 		settings[3] = '4';
 		settings[4] = '5';//admin pass
-		settings[5] = '1'; //log internet traffic
+		settings[5] = '0'; //log internet traffic
 		settings[6] = '2'; //log frequency in minutes ( 0=10min, 1=30min, 2=60min)
 		settings[7] = '1'; //keep log of free ram per session
-		settings[8] = '0'; //Reboot if can not write to SD
+		settings[8] = '1'; //Reboot if can not write to SD
 		saveSettings();
 
 	}
@@ -449,10 +449,10 @@ void checkForApiRequests()
 				}
 				/***************************** home page ***************************************/
 				if (strstr(request, "GET / ") != 0) {
-					ApiRequest_GetFile(&client, "INDEX.GZ", NULL);
+					ApiRequest_GetFile(&client, "index.gz", NULL);
 				}
 				/****************************** manifest file **********************************/
-				else if (strstr(request, "GET /CACHE.APP") != 0) {
+				else if (strstr(request, "GET /cache.app") != 0) {
 					ApiRequest_GetFile(&client, request + 5, NULL);
 				}
 				/****************************** login  (ANYONE) ********************************/
@@ -577,11 +577,11 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
 {
 	(*client).println(F("HTTP/1.1 200 OK"));
-	if (strstr(filename, ".JSN") != 0)
+	if (strstr(filename, ".jsn") != 0)
 		(*client).println(F("Content-Type: application/json"));
-	else if (strstr(filename, ".CHE") != 0)
+	else if (strstr(filename, ".app") != 0)
 		(*client).println(F("Content-Type: text/cache-manifest"));
-	else if (strstr(filename, ".GZ") != 0){
+	else if (strstr(filename, ".gz") != 0){
 		(*client).println(F("Content-Encoding: gzip"));
 		(*client).println(F("Content-Type: text/html"));
 	}
@@ -651,7 +651,7 @@ void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 	(strstr(pass, " HTTP"))[0] = 0;
 	if (isPassCorrect(pass))
 	{
-		ApiRequest_GetSuccessHeader(client, ".JSN");
+		ApiRequest_GetSuccessHeader(client, ".jsn");
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -663,7 +663,7 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 	/* in PUT request pass is passed as header:*/
 	if (isPassCorrect(putheader + 4))
 	{
-		ApiRequest_GetSuccessHeader(client, ".JSN");
+		ApiRequest_GetSuccessHeader(client, ".jsn");
 		ListFiles(client, LS_SIZE); //LS_SIZE 
 	}
 	else{
@@ -680,8 +680,8 @@ void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 			(putheader == NULL &&
 				(
 					strstr(filename, "data") ||        //or asking data file
-					strstr(filename, "CACHE.APP") ||   //or asking cache file
-					strstr(filename, "INDEX.GZ")       //or asking index file
+					strstr(filename, "cache.app") ||   //or asking cache file
+					strstr(filename, "index.gz")       //or asking index file
 				)
 			)
 
@@ -714,7 +714,7 @@ void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 	{
 		strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[7]))); //'settings.txt'
 		if (file.open(&root, logFileName, O_READ)) {
-			ApiRequest_GetSuccessHeader(client, ".JSON");
+			ApiRequest_GetSuccessHeader(client, ".jsn");
 
 			(*client).print(F("{\"DeviceTime\":\""));
 			printCurrentStringDateToClient(client, true);
@@ -754,7 +754,7 @@ void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* param
 		}
 		saveSettings();
 
-		ApiRequest_GetSuccessHeader(client, ".JSN");
+		ApiRequest_GetSuccessHeader(client, ".jsn");
 		(*client).println(F("{\"response\":\"Success\"}"));
 	}
 	else{
@@ -783,7 +783,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 			toDec(parameters[10], parameters[11]), //s
 			toDec(parameters[12])                 //w			
 			);
-		ApiRequest_GetSuccessHeader(client, ".JSN");
+		ApiRequest_GetSuccessHeader(client, ".jsn");
 		(*client).print(F("{\"response\":\"Success\",\"newdate\":\""));
 		printCurrentStringDateToClient(client, true);
 		(*client).println(F("\"}"));
@@ -803,7 +803,7 @@ byte toDec(char A, char B)
 	DEC: 49    ,53    
 	BIN: 110001,110101	
 	*/
-	return (toDec(A) * 10 + (B - '0'));
+	return (toDec(A) * 10 + toDec(B));
 }
 byte toDec(char A)
 {
@@ -814,7 +814,7 @@ void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 {
 	if (isPassCorrect(arguments + 4))
 	{		
-		ApiRequest_GetSuccessHeader(client, ".JSN");
+		ApiRequest_GetSuccessHeader(client, ".jsn");
 		(*client).println(F("{\"response\":\"Success\"}"));
 		delay(1);
 		(*client).stop();
