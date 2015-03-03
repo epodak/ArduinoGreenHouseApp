@@ -895,6 +895,7 @@ void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 		(*client).println(F("{\"response\":\"Success\"}"));
 		delay(1);
 		(*client).stop();
+		delay(15 * 1000); // wait 15 sec so user can remove sd card safelly
 		resetFunc();
 	}
 	else{
