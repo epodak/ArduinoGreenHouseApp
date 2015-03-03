@@ -410,21 +410,21 @@ sensorValue*
 void LogSensors(bool write, EthernetClient *client)
 {
 
-	bool na = false;
+	//bool na = false;
 	// Reading temperature or humidity takes about 250 milliseconds!
 	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-	float h = dht.readHumidity();
-	// Read temperature as Celsius
-	float t = dht.readTemperature();
+	//float h = dht.readHumidity();
+	//// Read temperature as Celsius
+	//float t = dht.readTemperature();
 	// Read temperature as Fahrenheit
 	//float f = dht.readTemperature(true);
 
 	// Check if any reads failed and exit early (to try again).
-	if (isnan(h) || isnan(t)) {
-		/*Serial.println("Failed to read from DHT sensor!");
-		return;*/
-		na = true;
-	}
+	//if (isnan(h) || isnan(t)) {
+	//	/*Serial.println("Failed to read from DHT sensor!");
+	//	return;*/
+	//	na = true;
+	//}
 
 	//AnalogPins: 0,1,2,3 (4 & 5 are reserved for I2C so no need to log it)
 	const uint8_t numOfPins = 4;
@@ -453,11 +453,9 @@ void LogSensors(bool write, EthernetClient *client)
 				//}
 
 				file.print(F("\",\"TempC\":"));
-				file.print(t, DEC);
+				writeFloatSensor(dht.readTemperature(), &file, NULL);
 				file.print(F(",\"HumPerc\":"));
-				file.print(h, DEC);
-
-
+				writeFloatSensor(dht.readHumidity(), &file, NULL);
 				file.print(F("}"));
 				file.println();
 			}
@@ -468,28 +466,33 @@ void LogSensors(bool write, EthernetClient *client)
 		}
 	}
 	else{
-		(*client).println(F("{\"Temperature\":"));
-		if (na) { 
-			(*client).println("NA"); 
-		
-		}
-		else{ 
-			(*client).println(t, DEC);
-		
-		}
-		(*client).println(F(",\"Humidity\":"));
-		if (na) {
-			(*client).println("NA");
-		}
-		else{
-			(*client).println(h, DEC);
-
-		}
+		(*client).println(F("{\"TempC\":"));
+		writeFloatSensor(dht.readTemperature(), NULL, client); // (*client).print(getFloatSensor(dht.readTemperature()));
+		(*client).println(F(",\"HumPerc\":"));
+		writeFloatSensor(dht.readHumidity(), NULL, client); //(*client).print(getFloatSensor(dht.readHumidity()));
 		(*client).println(F("}"));
 	}
 }
 
+//void showFloatSensor(float sensor, EthernetClient *client){
+//	if (isnan(sensor)){
+//		(*client).print(F("NA"));
+//	}
+//	else{
+//		(*client).print(sensor, DEC); // snprintf(logFileName, 10, "%f", sensor);
+//	}
+//}
 
+void writeFloatSensor(float sensor, SdFile *file, EthernetClient *client){
+	if (isnan(sensor)){
+		if(file!=NULL) (*file).print(F("NA"));
+		else           (*client).print(F("NA"));
+	}
+	else{
+		if (file != NULL) (*file).print(sensor, DEC); // snprintf(logFileName, 10, "%f", sensor);
+		else              (*client).print(sensor, DEC);
+	}
+}
 
 /*################# API ####################################**/
 /*
