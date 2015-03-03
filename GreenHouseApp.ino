@@ -5,6 +5,7 @@ SPI Ethernet CS: 10
 SPI SD CS: 4
 */
 
+#include <DHT.h>
 #include <SD.h>
 #include <SdFat.h>
 #include <SdFatUtil.h>
@@ -22,6 +23,21 @@ SPI SD CS: 4
 //#define outputLcdPin 8
 #define SDISPEED SPI_HALF_SPEED
 //  SPI_FULL_SPEED
+
+/* ##################### temperature humidity ####################### */
+#define DHTPIN 2     // what pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302)
+// Initialize DHT sensor for normal 16mhz Arduino
+DHT dht(DHTPIN, DHTTYPE);
+// NOTE: For working with a faster chip, like an Arduino Due or Teensy, you
+// might need to increase the threshold for cycle counts considered a 1 or 0.
+// You can do this by passing a 3rd parameter for this threshold.  It's a bit
+// of fiddling to find the right value, but in general the faster the CPU the
+// higher the value.  The default for a 16mhz AVR is a value of 6.  For an
+// Arduino Due that runs at 84mhz a value of 30 works.
+// Example to initialize DHT sensor for Arduino Due:
+//DHT dht(DHTPIN, DHTTYPE, 30);
+
 
 void(*resetFunc) (void) = 0;  //declare reset function @ address 0
 
@@ -144,6 +160,7 @@ void setup() {
 
 	initRamUsage(); //will set start amout of ram usage - min most likely
 
+	dht.begin();
 }
 
 void loop()
@@ -154,7 +171,7 @@ void loop()
 	checkForApiRequests(); //check any API calls and respond 
 
 	if (isTimeToLog()){ //check if minute is correct and if so - log sensor data.
-		LogSensors();      //log sensor input to log file		
+		LogSensors(true, NULL);      //log sensor input to log file		
 	}
 	sessionTimeStamp(); //keep session running
 	logRamUsage();
@@ -388,42 +405,89 @@ uint8_t sensor
 sensorValue*
 
 */
-void LogSensors()
+void LogSensors(bool write, EthernetClient *client)
 {
+
+	bool na = false;
+	// Reading temperature or humidity takes about 250 milliseconds!
+	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+	float h = dht.readHumidity();
+	// Read temperature as Celsius
+	float t = dht.readTemperature();
+	// Read temperature as Fahrenheit
+	//float f = dht.readTemperature(true);
+
+	// Check if any reads failed and exit early (to try again).
+	if (isnan(h) || isnan(t)) {
+		/*Serial.println("Failed to read from DHT sensor!");
+		return;*/
+		na = true;
+	}
 
 	//AnalogPins: 0,1,2,3 (4 & 5 are reserved for I2C so no need to log it)
 	const uint8_t numOfPins = 4;
 	int sensor = 0;  //int8_t not right
 
-	if (file.open(root, getCurrentLogFileName(), O_CREAT | O_APPEND | O_WRITE))//Open or create the file
-	{
-		if (file.isFile()){
+	if (write){
+		if (file.open(root, getCurrentLogFileName(), O_CREAT | O_APPEND | O_WRITE))//Open or create the file
+		{
+			if (file.isFile()){
 
-			file.print(F("{ \"datetime\":\""));
-			printCurrentStringDateToFile(&file, true);
-			file.print(F("\", "));
+				file.print(F("{ \"datetime\":\""));
+				printCurrentStringDateToFile(&file, true);
+				//file.print(F("\", "));
 
-			for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
-				sensor = analogRead(analogPin);
-				file.print(F("\"AnalogPin"));
-				file.print(itoa(analogPin, sensorValue, 10));
-				file.print(F("\": \""));
-				file.print(itoa(sensor, sensorValue, 10));
-				file.print(F("\""));
-				if (analogPin < (numOfPins - 1)) {
-					file.print(F(","));
-				}
-				logRamUsage();
+				//for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
+				//	sensor = analogRead(analogPin);
+				//	file.print(F("\"AnalogPin"));
+				//	file.print(itoa(analogPin, sensorValue, 10));
+				//	file.print(F("\": \""));
+				//	file.print(itoa(sensor, sensorValue, 10));
+				//	file.print(F("\""));
+				//	if (analogPin < (numOfPins - 1)) {
+				//		file.print(F(","));
+				//	}
+				//	logRamUsage();
+				//}
+
+				file.print(F("\",\"TempC\":"));
+				file.print(t, DEC);
+				file.print(F(",\"HumPerc\":"));
+				file.print(h, DEC);
+
+
+				file.print(F("}"));
+				file.println();
 			}
-			file.print(F("}"));
-			file.println();
+			file.close();
 		}
-		file.close();
+		else{
+			cryticalError(1);
+		}
 	}
 	else{
-		cryticalError(1);
+		(*client).println(F("{\"Temperature\":"));
+		if (na) { 
+			(*client).println("NA"); 
+		
+		}
+		else{ 
+			(*client).println(t, DEC);
+		
+		}
+		(*client).println(F(",\"Humidity\":"));
+		if (na) {
+			(*client).println("NA");
+		}
+		else{
+			(*client).println(h, DEC);
+
+		}
+		(*client).println(F("}"));
 	}
 }
+
+
 
 /*################# API ####################################**/
 /*
@@ -460,6 +524,10 @@ void checkForApiRequests()
 				/****************************** login  (ANYONE) ********************************/
 				else if (strstr(request, "GET /admin?U=") != 0) {
 					ApiRequest_CheckLogInPin(&client, request + 13);
+				}
+				/****************************** sensors (ANYONE) *******************************/
+				else if (strstr(request, "GET /status") != 0) {
+					ApiRequest_ShowSensorStatus(&client);
 				}
 				/****************************** log file *************************/
 				else if (strstr(request, "GET /data") != 0) {
@@ -646,6 +714,11 @@ void ApiRequest_GetOptionsScreen(EthernetClient *client)
 	}
 	(*client).println(F("Connection: close"));
 	(*client).println();
+}
+
+void ApiRequest_ShowSensorStatus(EthernetClient *client){
+	ApiRequest_GetSuccessHeader(client, ".jsn");
+	LogSensors(false, client);
 }
 
 void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
