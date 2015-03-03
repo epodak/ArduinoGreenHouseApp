@@ -97,6 +97,7 @@ char logFileName[LOGFILENAMELENGTH];
 //const char* day[] = { F("NotSet!"), F("Sun"), F("Mon"), F("Tue"), F("Wed"), F("Thu"), F("Fri"), F("Sat") };
 
 byte lastLogTimeMin; //save minute of the last sensor log
+byte lastLogTimeHour; 
 byte session[7];     //save session start time here
 byte sessionId[2];   //created session ID here
 
@@ -295,17 +296,18 @@ bool isTimeToLog()
 
 	if (settings[6] == '0'){ min = 10; }     //log lines: 6/h, 144/d, 4320/month
 	else if (settings[6] == '1'){ min = 30; }//log lines: 2/h, 48/d,  1488/month
-	//else if (settings[6] == '2'){ min = 60; }//log lines: 1/h, 24/d,  744/month
-	else { min = 60; } //default
+	//else if (settings[6] == '2'){ min = 59; }//log lines: 1/h, 24/d,  744/month
+	else { min = 59; } //default
 	/* get current date: */
 	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
 	/* last log date is inside lastLogTime */
 	if (
 		(minute % min == 0) &&       //is time to log!
-		(minute != lastLogTimeMin)   //make sure we did not log this time already
+		(minute != lastLogTimeMin || lastLogTimeHour != hour)   //make sure we did not log this time already
 		)
 	{
 		lastLogTimeMin = minute;   //mark as logged
+		lastLogTimeHour = hour;
 		return true;
 	}
 	else{
