@@ -466,10 +466,19 @@ void LogSensors(bool write, EthernetClient *client)
 		}
 	}
 	else{
-		(*client).println(F("{\"TempC\":"));
+		(*client).print(F("{\"DeviceTime\":\""));
+		printCurrentStringDateToClient(client, true);
+		(*client).print(F("\",\"MinRam\":\""));
+		(*client).print(minMaxRam[0], DEC);
+		(*client).print(F("b\",\"MaxRam\":\""));
+		(*client).print(minMaxRam[1], DEC);
+		(*client).print(F("b\",\"RunningSince\":\""));
+		printCurrentStringDateToClient(client, false);
+		(*client).println(F("\",\"TempC\":"));
 		writeFloatSensor(dht.readTemperature(), NULL, client); // (*client).print(getFloatSensor(dht.readTemperature()));
 		(*client).println(F(",\"HumPerc\":"));
 		writeFloatSensor(dht.readHumidity(), NULL, client); //(*client).print(getFloatSensor(dht.readHumidity()));
+
 		(*client).println(F("}"));
 	}
 }
