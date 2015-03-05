@@ -264,18 +264,19 @@ void sessionTimeStamp(){
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[5]))); //'session.txt'
 	if (file.open(&root, logFileName, O_CREAT | O_WRITE)) {
 		if (file.isFile()){
-			file.print(F("{ \"Session\":"));
-			file.print(sessionId[0], DEC);
-			file.print(sessionId[1], DEC);
+			file.print(F("{"));
+			//file.print(sessionId[0], DEC);
+			//file.print(sessionId[1], DEC);
 
 			if (settings[7] == '1'){ //if logging ram?
-				file.print(F(",\"MinRam\":"));
+				file.print(F("\"MinRam\":"));
 				file.print(minMaxRam[0], DEC);
 				file.print(F(",\"MaxRam\" :"));
 				file.print(minMaxRam[1], DEC);
+				file.print(F(","));
 			}
 
-			file.print(F(",\"StartedTime\":\""));
+			file.print(F("\"StartedTime\":\""));
 			printCurrentStringDateToFile(&file, false); //print session start time from session ID
 			file.print(F("\", \"EndedTime\":\""));
 			printCurrentStringDateToFile(&file, true); //print current time
@@ -382,16 +383,17 @@ bool isPassCorrect(char *pass)
 	//012345678 Header
 	//PP: 12345
 	//i = 3;
-	if (
+	return
 		settings[0] == pass[0] &&
 		settings[1] == pass[1] &&
 		settings[2] == pass[2] &&
 		settings[3] == pass[3] &&
-		settings[4] == pass[4]
-		)
-		return true;
-	else
-		return false;
+		settings[4] == pass[4];
+		//	)
+	//	return true;
+	//else
+	//	return false;
+
 }
 
 /*################# LOG SENSORS ####################################**/
@@ -456,8 +458,8 @@ void LogSensors(bool write, EthernetClient *client)
 				writeFloatSensor(dht.readTemperature(), &file, NULL);
 				file.print(F(",\"HumPerc\":"));
 				writeFloatSensor(dht.readHumidity(), &file, NULL);
-				file.print(F("}"));
-				file.println();
+				file.println(F("}"));
+				//file.println();
 			}
 			file.close();
 		}
@@ -660,25 +662,22 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 
 void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
 {
-	(*client).println(F("HTTP/1.1 200 OK"));
+	ApiRequest_HelpHttpOK(client);
 	if (strstr(filename, ".jsn") != 0)
-		(*client).println(F("Content-Type: application/json"));
+		ApiRequest_HelpContentTypeJson(client);
 	else if (strstr(filename, ".app") != 0)
 		(*client).println(F("Content-Type: text/cache-manifest"));
 	else if (strstr(filename, ".gz") != 0){
 		(*client).println(F("Content-Encoding: gzip"));
-		(*client).println(F("Content-Type: text/html"));
+		ApiRequest_HelpContentTypeHtml(client);
 	}
 	else
-		(*client).println(F("Content-Type: text/html"));	
+		ApiRequest_HelpContentTypeHtml(client);
 	
 
-	if (true){ //if settings allow other javascript websites to query our api
-		(*client).println(F("Access-Control-Allow-Origin: *"));
-		(*client).println(F("Access-Control-Allow-Headers: PP"));
-	}
-	(*client).println(F("Connection: close"));
-	(*client).println();
+	ApiRequest_HelpAccessControllAllow(client, false);
+
+	ApiRequest_HelpConnectionClose(client);
 }
 
 void ApiRequest_GetErrorScreen(EthernetClient *client, bool is404, bool isJson)
@@ -691,43 +690,33 @@ void ApiRequest_GetErrorScreen(EthernetClient *client, bool is404, bool isJson)
 	}
 
 	if (isJson)
-		(*client).println(F("Content-Type: application/json"));
+		ApiRequest_HelpContentTypeJson(client);
 	else
-		(*client).println(F("Content-Type: text/html"));
+		ApiRequest_HelpContentTypeHtml(client);
 
-	if (true){ //if settings allow other javascript websites to query our api
-		(*client).println(F("Access-Control-Allow-Origin: *"));
-		(*client).println(F("Access-Control-Allow-Headers: PP"));
-	}
-	(*client).println(F("Connection: close"));
-	(*client).println();
-	if (is404){
-		if (isJson)
-			(*client).println(F("{\"error\":\"404-File Not Found\"}"));
-		else
-			(*client).println(F("<h2>File Not Found!</h2>"));
-	}
-	else{
-		if (isJson)
-			(*client).println(F("{ \"error\":\"401-Access Denied\" }"));
-		else
-			(*client).println(F("<h2>Access Denied</h2>"));
-	}
-	(*client).println();
+	ApiRequest_HelpAccessControllAllow(client, false);
+	ApiRequest_HelpConnectionClose(client);
+	//if (is404){
+	//	if (isJson)
+	//		(*client).println(F("{\"error\":\"404-File Not Found\"}"));
+	//	else
+	//		(*client).println(F("<h2>File Not Found!</h2>"));
+	//}
+	//else{
+	//	if (isJson)
+	//		(*client).println(F("{ \"error\":\"401-Access Denied\" }"));
+	//	else
+	//		(*client).println(F("<h2>Access Denied</h2>"));
+	//}
+	//(*client).println();
 }
 
 void ApiRequest_GetOptionsScreen(EthernetClient *client)
 {
 
-	(*client).println(F("HTTP/1.1 200 OK"));
-	if (true){ //if settings allow other javascript websites to query our api
-		(*client).println(F("Allow: GET, PUT, POST, OPTIONS"));
-		(*client).println(F("Access-Control-Allow-Origin: *")); //add settings to allow specific origins too?
-		(*client).println(F("Access-Control-Allow-Headers: PP"));
-		(*client).println(F("Access-Control-Allow-Methods: GET, PUT, POST, OPTIONS"));
-	}
-	(*client).println(F("Connection: close"));
-	(*client).println();
+	ApiRequest_HelpHttpOK(client);
+	ApiRequest_HelpAccessControllAllow(client, true);
+	ApiRequest_HelpConnectionClose(client);
 }
 
 void ApiRequest_ShowSensorStatus(EthernetClient *client){
@@ -844,7 +833,7 @@ void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* param
 		saveSettings();
 
 		ApiRequest_GetSuccessHeader(client, ".jsn");
-		(*client).println(F("{\"response\":\"Success\"}"));
+		//(*client).println(F("{\"response\":\"Success\"}"));
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -873,7 +862,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 			toDec(parameters[12])                 //w			
 			);
 		ApiRequest_GetSuccessHeader(client, ".jsn");
-		(*client).print(F("{\"response\":\"Success\",\"newdate\":\""));
+		(*client).print(F("{\"newdate\":\""));
 		printCurrentStringDateToClient(client, true);
 		(*client).println(F("\"}"));
 	}
@@ -904,7 +893,7 @@ void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 	if (isPassCorrect(arguments + 4))
 	{		
 		ApiRequest_GetSuccessHeader(client, ".jsn");
-		(*client).println(F("{\"response\":\"Success\"}"));
+		//(*client).println(F("{\"response\":\"Success\"}"));
 		delay(1);
 		(*client).stop();
 		delay(15 * 1000); // wait 15 sec so user can remove sd card safelly
@@ -916,6 +905,36 @@ void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 
 }
 
+void ApiRequest_HelpHttpOK(EthernetClient *client)
+{
+	(*client).println(F("HTTP/1.1 200 OK"));
+}
+
+void ApiRequest_HelpConnectionClose(EthernetClient *client)
+{
+	(*client).println(F("Connection: close"));
+	(*client).println();
+}
+
+void ApiRequest_HelpAccessControllAllow(EthernetClient *client, bool option)
+{
+	if (true){ //if settings allow other javascript websites to query our api
+		if (option) (*client).println(F("Allow: GET, PUT, POST, OPTIONS"));
+		(*client).println(F("Access-Control-Allow-Origin: *"));
+		(*client).println(F("Access-Control-Allow-Headers: PP"));
+		if (option) (*client).println(F("Access-Control-Allow-Methods: GET, PUT, POST, OPTIONS"));
+	}
+}
+
+void ApiRequest_HelpContentTypeHtml(EthernetClient *client)
+{
+	(*client).println(F("Content-Type: text/html"));
+}
+
+void ApiRequest_HelpContentTypeJson(EthernetClient *client)
+{
+	(*client).println(F("Content-Type: application/json"));
+}
 /*############################ List FIles ########################################*/
 
 void ListFiles(EthernetClient *client, uint8_t flags) {
@@ -1076,20 +1095,20 @@ char* getCurrentLogFileName(){
 	return logFileName;
 }
 
-char* getCurrentErrorFileName(){
-
-	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
-	// retrieve data from DS3231
-	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
-	// send it to the serial monitor
-
-	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[2]))); //'err_'
-	appendNumber(year, NULL);
-	appendNumber(month, NULL);
-	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[4]))); //'.err'
-
-	return logFileName;
-}
+//char* getCurrentErrorFileName(){
+//
+//	//byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+//	// retrieve data from DS3231
+//	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
+//	// send it to the serial monitor
+//
+//	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[2]))); //'err_'
+//	appendNumber(year, NULL);
+//	appendNumber(month, NULL);
+//	strcat_P(logFileName, (char*)pgm_read_word(&(string_table[4]))); //'.err'
+//
+//	return logFileName;
+//}
 /****************************logging***************************************/
 
 
@@ -1144,21 +1163,21 @@ void logHttp(char* line, char* args){
 	}
 }
 
-void log(char* line){
-
-	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
-	if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
-		if (file.isFile()){
-			file.print(F("{ \"debug\":\""));
-			file.print(line);
-			file.print(F("\", \"datetime\":\""));
-			printCurrentStringDateToFile(&file, true);
-			file.print(F("\" }"));
-			file.println();
-		}
-		file.close();
-	}
-}
+//void log(char* line){
+//
+//	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
+//	if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
+//		if (file.isFile()){
+//			file.print(F("{ \"debug\":\""));
+//			file.print(line);
+//			file.print(F("\", \"datetime\":\""));
+//			printCurrentStringDateToFile(&file, true);
+//			file.print(F("\" }"));
+//			file.println();
+//		}
+//		file.close();
+//	}
+//}
 
 void cryticalError(byte Reason){
 	//1 - SD card error - can not open file
