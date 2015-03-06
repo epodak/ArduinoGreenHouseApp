@@ -58,6 +58,7 @@ namespace Test
         public async Task Html_GET()
         {
             newClient();
+            addGzipHeader();
             HttpResponseMessage response = await _client.GetAsync("/");
             //response.EnsureSuccessStatusCode();
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "response is not 200");
@@ -71,6 +72,17 @@ namespace Test
             string responseBody = await response.Content.ReadAsStringAsync();
 
             Assert.IsTrue(responseBody.Contains("index.htm"), "Body did not return index");
+
+        }
+
+        [TestMethod]
+        [TestCategory("INTEGRATION")]
+        [TestProperty("Type", "GET")]
+        public async Task Html_NoGzip_GET()
+        {
+            newClient();            
+            HttpResponseMessage response = await _client.GetAsync("/");
+            Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode, "response code is not 401");
 
         }
 

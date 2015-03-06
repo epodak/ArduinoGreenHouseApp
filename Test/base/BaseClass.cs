@@ -30,5 +30,13 @@ namespace Test
 
         }
 
+        public void addGzipHeader()
+        {
+            //Accept-Encoding: gzip
+            _client.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate");
+            //_client.DefaultRequestHeaders.AcceptEncoding.Add("gzip");
+           
+        }
+
     }
 }

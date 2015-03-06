@@ -15,6 +15,8 @@ SPI SD CS: 4
 #include <avr/pgmspace.h> //flash, fast, 10,000x 
 //#include <avr/eeprom.h>   //slow (3ms) [therefore use it only for startup variables], 100,000x 
 
+#ifndef VLAD_COLLAPSE
+
 /* ################# Hardware Settings ############################ */
 /* address for clock on I2C bus */
 #define DS3231_I2C_ADDRESS 0x68
@@ -24,7 +26,7 @@ SPI SD CS: 4
 #define SDISPEED SPI_HALF_SPEED
 //  SPI_FULL_SPEED
 
-/* ##################### temperature humidity ####################### */
+/* ##################### temperature humidity ##################### */
 #define DHTPIN 2     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 // Initialize DHT sensor for normal 16mhz Arduino
@@ -38,24 +40,25 @@ DHT dht(DHTPIN, DHTTYPE);
 // Example to initialize DHT sensor for Arduino Due:
 //DHT dht(DHTPIN, DHTTYPE, 30);
 
-
+/* ##################### resetFunc ################################ */
 void(*resetFunc) (void) = 0;  //declare reset function @ address 0
 
-/************ ETHERNET STUFF ************/
+
+/* ##################### ETHERNET ################################# */
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 byte ip[] = { 192, 168, 1, 120 };
 EthernetServer server(8080);
 
-/************ SDCARD STUFF ************/
+/* ##################### SDCARD ################################### */
 Sd2Card card;
 SdVolume volume;
 SdFile root;
 SdFile file;
 
-/************ TIMER STUFF *************/
+/* ##################### TIMER #################################### */
 byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 
-/************ PROGMEM STUFF *************/
+/* ##################### PROGMEM ################################## */
 //for every copy of the program to the device it is writing to flash memmory (progmem) 
 //therefore after we wrote this data once, we only reference it afterwards (thats why is commented)
 const prog_char string_0[] PROGMEM = "0";   // "String 0" etc are strings to store - change to suit.
@@ -87,7 +90,8 @@ PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 	string_11
 };
 
-/************ DYNAMIC VARS ************/
+
+/* ##################### VARS ##################################### */
 /* this variable is used for following operations:
 datayyMM.jsn //has to be 8.3 format or it will error out! 
 YYYY-MM-dd HH:mm:ss // is 20 chars
@@ -139,8 +143,11 @@ char putheader[BUFSIZ];
 
 /* Our web server will timeout in this many ms */
 //#define TIMEOUTMS 2000
+#endif
 
 //#define SERIALDEBUG
+
+
 
 void setup() {
 
@@ -190,8 +197,8 @@ void EthernetInit(){
 	server.begin();
 }
 
-/*######################## RAM LOGING ##################################*/
-
+/*######################## RAM LOGING ############################################*/
+#ifndef VLAD_COLLAPSE
 void initRamUsage()
 {
 	minMaxRam[0] = FreeRam();
@@ -208,9 +215,9 @@ void logRamUsage()
 		minMaxRam[0] = FreeRam();
 	}
 }
-
-/*##################### SESSION #########################################*/
-
+#endif
+/*##################### SESSION ##################################################*/
+#ifndef VLAD_COLLAPSE
 void sessionStart(){
 
 	/* save curent date / time*/
@@ -290,34 +297,9 @@ void sessionTimeStamp(){
 	}
 }
 
-/* log timer allows writting every X mins */
-bool isTimeToLog()
-{
-	byte min;
-
-	if (settings[6] == '0'){ min = 10; }     //log lines: 6/h, 144/d, 4320/month
-	else if (settings[6] == '1'){ min = 30; }//log lines: 2/h, 48/d,  1488/month
-	//else if (settings[6] == '2'){ min = 59; }//log lines: 1/h, 24/d,  744/month
-	else { min = 59; } //default
-	/* get current date: */
-	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
-	/* last log date is inside lastLogTime */
-	if (
-		(minute % min == 0) &&       //is time to log!
-		(minute != lastLogTimeMin || lastLogTimeHour != hour)   //make sure we did not log this time already
-		)
-	{
-		lastLogTimeMin = minute;   //mark as logged
-		lastLogTimeHour = hour;
-		return true;
-	}
-	else{
-		return false;
-	}
-
-}
-
-/*################# SETTINGS ####################################**/
+#endif
+/*################# SETTINGS ####################################################**/
+#ifndef VLAD_COLLAPSE
 bool readSettings(){
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[7]))); //'settings.txt
 	if (file.open(&root, logFileName, O_READ)) {
@@ -389,15 +371,11 @@ bool isPassCorrect(char *pass)
 		settings[2] == pass[2] &&
 		settings[3] == pass[3] &&
 		settings[4] == pass[4];
-		//	)
-	//	return true;
-	//else
-	//	return false;
 
 }
-
-/*################# LOG SENSORS ####################################**/
-
+#endif
+/*################# LOG SENSORS #################################################**/
+#ifndef VLAD_COLLAPSE
 /*
 Log inputs to log file
 - uses heap:
@@ -459,7 +437,6 @@ void LogSensors(bool write, EthernetClient *client)
 				file.print(F(",\"HumPerc\":"));
 				writeFloatSensor(dht.readHumidity(), &file, NULL);
 				file.println(F("}"));
-				//file.println();
 			}
 			file.close();
 		}
@@ -485,6 +462,33 @@ void LogSensors(bool write, EthernetClient *client)
 	}
 }
 
+/* log timer allows writting every X mins */
+bool isTimeToLog()
+{
+	byte min;
+
+	if (settings[6] == '0'){ min = 10; }     //log lines: 6/h, 144/d, 4320/month
+	else if (settings[6] == '1'){ min = 30; }//log lines: 2/h, 48/d,  1488/month
+	//else if (settings[6] == '2'){ min = 59; }//log lines: 1/h, 24/d,  744/month
+	else { min = 59; } //default
+	/* get current date: */
+	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
+	/* last log date is inside lastLogTime */
+	if (
+		(minute % min == 0) &&       //is time to log!
+		(minute != lastLogTimeMin || lastLogTimeHour != hour)   //make sure we did not log this time already
+		)
+	{
+		lastLogTimeMin = minute;   //mark as logged
+		lastLogTimeHour = hour;
+		return true;
+	}
+	else{
+		return false;
+	}
+
+}
+
 //void showFloatSensor(float sensor, EthernetClient *client){
 //	if (isnan(sensor)){
 //		(*client).print(F("NA"));
@@ -504,8 +508,10 @@ void writeFloatSensor(float sensor, SdFile *file, EthernetClient *client){
 		else              (*client).print(sensor, DEC);
 	}
 }
+#endif
+/* ################# API ########################################################**/
+#ifndef VLAD_COLLAPSE
 
-/*################# API ####################################**/
 /*
 char clientline[BUFSIZ];
 uint8_t index
@@ -530,11 +536,14 @@ void checkForApiRequests()
 					ApiRequest_GetOptionsScreen(&client);
 				}
 				/***************************** home page ***************************************/
-				if (strstr(request, "GET / ") != 0) {
-					ApiRequest_GetFile(&client, "index.gz", NULL);
+				if (strcmp(request, "GET /") == 0) { //test if strings are equal
+					if (strstr(putheader, "gzip")!=0)
+						ApiRequest_GetFile(&client, "index.gz", NULL);
+					else
+						ApiRequest_GetErrorScreen(&client, false, false); // browser not supporting gzip. Alternatively return html?
 				}
 				/****************************** manifest file **********************************/
-				else if (strstr(request, "GET /cache.app") != 0) {
+				else if (strstr(request, "GET /cache.app") != 0) { //test if strings contains
 					ApiRequest_GetFile(&client, request + 5, NULL);
 				}
 				/****************************** login  (ANYONE) ********************************/
@@ -591,72 +600,56 @@ void checkForApiRequests()
 
 void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* putheader)
 {
-	/* instead try read one line at the time and parse, "GET/PUT/POST/OPTION", "PP:" and  "Accept-Encoding: gzip, deflate" lines 
-				strstr(request, "GET / ") != 0
-				strstr(request, "PP: ") != 0
-				following should only check on home page - and store in putheader array.so we can notify user if browser is old
-				strstr(request, "Accept-Encoding: ") != 0  && strstr(request, "gzip") != 0 
+	/*  puts first line into "request" (it trims ' HTTP/1.1')
+
+		puts into 'putheader': PP line
+		- unless it is 'GET /' requests then puts 'Accept-Encoding' line.
 	*/
 
 	uint8_t index = 0;
-	uint8_t indexargs = 0;
-	bool parametersFound = false;
+	uint8_t lineNo = 1;
 	int c = (*client).read();
-	//putheader[0] = c;
 	while (c >= 0){
 		// If it isn't a new line, add the character to the buffer
 		if (c != '\n' && c != '\r') {
-			/*---- find request ----------------------*/
-			if (index  < BUFSIZ)
+			if (index  < BUFSIZ-1)
 			{
-				request[index] = c; //read first line
+				putheader[index] = c; //read current line
 				index++;
 			}
-			/*---- find post or put arguments --------*/
-			if (!parametersFound){ //look for PP:
-				putheader[indexargs++] = c; //save 0,1,2 for comparison
-				if (indexargs == 4) {
-					putheader[0] = putheader[1];
-					putheader[1] = putheader[2];
-					putheader[2] = putheader[3];
-					indexargs--; //indexargs is 3 again
-
-					if (putheader[0] == 'P' && putheader[1] == 'P' && putheader[2] == ':'){
-						parametersFound = true;
-					}
-				}	
-			}
-			else{
-				if (indexargs < BUFSIZ){					
-					putheader[indexargs] = c;
-					indexargs++;
-				}
-			}
-			/*-----------------------------------------*/
-			//continue; //restart while
 		}
 		else{
-			if (index > 3 && index < BUFSIZ) {
-				request[index] = 0;
-				index = BUFSIZ + 1;
+			if (c == '\n'){
+				putheader[index] = 0;
+				index = 0;
+				if (lineNo == 1){
+					strcpy(request, putheader);
+					(strstr(request, " HTTP"))[0] = 0; //trim junk
+				}
+				else if (
+					//if requesting index, look for 'Accept-Encoding' line to ckeck gzip attribute
+					((strcmp(request, "GET /") == 0) && (strstr(putheader, "Accept-Encoding: ") != 0))
+					||
+					//or when PP is found we are done!
+					(strstr(putheader, "PP: ") != 0)
+					)
+				{
+					index = BUFSIZ-1; //stop reading
+				}
+				lineNo++;
 			}
-			if (indexargs > 3 && indexargs < BUFSIZ) {
-				putheader[indexargs] = 0;
-				indexargs = BUFSIZ + 1;
-			}		
 		}
 		logRamUsage();
 		c = (*client).read();
 	}//end while
-	//folowing just prevents any bug if request line is very long 
-	//so we did not have chance to break the line yet:
-	putheader[BUFSIZ - 1] = 0;
-	request[BUFSIZ - 1] = 0;
+
 #ifdef SERIALDEBUG
-	Serial.print("request:");
-	Serial.println(request);
-	Serial.print("putheader:");
-	Serial.println(putheader);
+	Serial.print("request: \'");
+	Serial.print(request);
+	Serial.println("\'");
+	Serial.print("putheader: '");
+	Serial.print(putheader);
+	Serial.println("\'");
 #endif
 }
 
@@ -726,7 +719,7 @@ void ApiRequest_ShowSensorStatus(EthernetClient *client){
 
 void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 	
-	(strstr(pass, " HTTP"))[0] = 0;
+	//(strstr(pass, " HTTP"))[0] = 0;
 	if (isPassCorrect(pass))
 	{
 		ApiRequest_GetSuccessHeader(client, ".jsn");
@@ -767,7 +760,7 @@ void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 	{
 		// a little trick, look for the " HTTP/1.1" string and 
 		// turn the first character of the substring into a 0 to clear it out.
-		(strstr(filename, " HTTP"))[0] = 0;
+		//(strstr(filename, " HTTP"))[0] = 0;
 
 		if (file.open(&root, filename, O_READ)) {
 			ApiRequest_GetSuccessHeader(client, filename);
@@ -871,23 +864,6 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 	}
 }
 
-byte toDec(char A, char B)
-{
-	logRamUsage();
-	/* convert each ASCII to byte value and add them 
-	Example:
-	VAR  A     ,B
-	ASCI 1      5
-	DEC: 49    ,53    
-	BIN: 110001,110101	
-	*/
-	return (toDec(A) * 10 + toDec(B));
-}
-byte toDec(char A)
-{
-	return A - '0';
-}
-
 void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 {
 	if (isPassCorrect(arguments + 4))
@@ -935,6 +911,25 @@ void ApiRequest_HelpContentTypeJson(EthernetClient *client)
 {
 	(*client).println(F("Content-Type: application/json"));
 }
+
+byte toDec(char A, char B)
+{
+	logRamUsage();
+	/* convert each ASCII to byte value and add them
+	Example:
+	VAR  A     ,B
+	ASCI 1      5
+	DEC: 49    ,53
+	BIN: 110001,110101
+	*/
+	return (toDec(A) * 10 + toDec(B));
+}
+byte toDec(char A)
+{
+	return A - '0';
+}
+
+#endif
 /*############################ List FIles ########################################*/
 
 void ListFiles(EthernetClient *client, uint8_t flags) {
@@ -980,7 +975,9 @@ void ListFiles(EthernetClient *client, uint8_t flags) {
 
 }
 
-/*############################ Clock #########################################*/
+/*############################ Clock #############################################*/
+#ifndef VLAD_COLLAPSE
+
 
 // Convert normal decimal numbers to binary coded decimal
 byte decToBcd(byte val)
@@ -1033,7 +1030,6 @@ void printCurrentStringDateToClient(EthernetClient *client, bool getCurrentTime)
 {
 	(*client).print(getStringDate(getCurrentTime));
 }
-
 char* getStringDate(bool currentTime)
 {
 
@@ -1109,9 +1105,10 @@ char* getCurrentLogFileName(){
 //
 //	return logFileName;
 //}
-/****************************logging***************************************/
 
-
+#endif
+/*############################ Loging ############################################*/
+#ifndef VLAD_COLLAPSE
 void logInit(){
 #ifdef SERIALDEBUG
 	Serial.begin(9600);
@@ -1191,5 +1188,10 @@ void cryticalError(byte Reason){
 		resetFunc();  //call reset
 	}
 }
+#endif
+/*########################### Helpers ############################################*/
+#ifndef VLAD_COLLAPSE
 
-/**************************************************************************/
+#endif
+
+/*################################################################################*/
