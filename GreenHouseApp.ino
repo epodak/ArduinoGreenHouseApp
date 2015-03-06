@@ -689,19 +689,7 @@ void ApiRequest_GetErrorScreen(EthernetClient *client, bool is404, bool isJson)
 
 	ApiRequest_HelpAccessControllAllow(client, false);
 	ApiRequest_HelpConnectionClose(client);
-	//if (is404){
-	//	if (isJson)
-	//		(*client).println(F("{\"error\":\"404-File Not Found\"}"));
-	//	else
-	//		(*client).println(F("<h2>File Not Found!</h2>"));
-	//}
-	//else{
-	//	if (isJson)
-	//		(*client).println(F("{ \"error\":\"401-Access Denied\" }"));
-	//	else
-	//		(*client).println(F("<h2>Access Denied</h2>"));
-	//}
-	//(*client).println();
+
 }
 
 void ApiRequest_GetOptionsScreen(EthernetClient *client)
@@ -719,7 +707,6 @@ void ApiRequest_ShowSensorStatus(EthernetClient *client){
 
 void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 	
-	//(strstr(pass, " HTTP"))[0] = 0;
 	if (isPassCorrect(pass))
 	{
 		ApiRequest_GetSuccessHeader(client, ".jsn");
@@ -731,7 +718,6 @@ void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
 
 void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
-	/* in PUT request pass is passed as header:*/
 	if (isPassCorrect(putheader + 4))
 	{
 		ApiRequest_GetSuccessHeader(client, ".jsn");
@@ -745,7 +731,6 @@ void ApiRequest_GetFileList(EthernetClient *client, char* putheader){
 
 void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 {
-	/* in PUT request pass is passed as header */
 	if (
 		(putheader != NULL && isPassCorrect(putheader + 4)) ||  //if admin
 			(putheader == NULL &&
@@ -758,9 +743,6 @@ void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 
 		)
 	{
-		// a little trick, look for the " HTTP/1.1" string and 
-		// turn the first character of the substring into a 0 to clear it out.
-		//(strstr(filename, " HTTP"))[0] = 0;
 
 		if (file.open(&root, filename, O_READ)) {
 			ApiRequest_GetSuccessHeader(client, filename);
@@ -826,7 +808,6 @@ void ApiRequest_PutSettings(EthernetClient *client, char* putheader, char* param
 		saveSettings();
 
 		ApiRequest_GetSuccessHeader(client, ".jsn");
-		//(*client).println(F("{\"response\":\"Success\"}"));
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -869,7 +850,6 @@ void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 	if (isPassCorrect(arguments + 4))
 	{		
 		ApiRequest_GetSuccessHeader(client, ".jsn");
-		//(*client).println(F("{\"response\":\"Success\"}"));
 		delay(1);
 		(*client).stop();
 		delay(15 * 1000); // wait 15 sec so user can remove sd card safelly
@@ -914,7 +894,6 @@ void ApiRequest_HelpContentTypeJson(EthernetClient *client)
 
 byte toDec(char A, char B)
 {
-	logRamUsage();
 	/* convert each ASCII to byte value and add them
 	Example:
 	VAR  A     ,B
