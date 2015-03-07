@@ -457,13 +457,13 @@ bool isTimeToLog()
 
 	if (settings[6] == '0'){ min = 10; }     //log lines: 6/h, 144/d, 4320/month
 	else if (settings[6] == '1'){ min = 30; }//log lines: 2/h, 48/d,  1488/month
-	//else if (settings[6] == '2'){ min = 59; }//log lines: 1/h, 24/d,  744/month
-	else { min = 59; } //default
+	//else if (settings[6] == '2'){ min = 60; }//log lines: 1/h, 24/d,  744/month
+	else { min = 60; } //default (anything > 59 wil log at 0 mins since 0 % anything = 0!
 	/* get current date: */
 	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
 	/* last log date is inside lastLogTime */
 	if (
-		(minute % min == 0) &&       //is time to log!
+		(minute % min == 0) &&  //is time to log!
 		(minute != lastLogTimeMin || lastLogTimeHour != hour)   //make sure we did not log this time already
 		)
 	{
