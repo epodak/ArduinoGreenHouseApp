@@ -150,7 +150,7 @@ namespace Test
             HttpResponseMessage response = await _client.GetAsync("/sysadmin");
             //response.EnsureSuccessStatusCode();
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "response is not 200");
-            Assert.IsTrue(response.Content.Headers.ContentType.MediaType.Equals("application/json"), "response type is not json"); ;
+            Assert.IsTrue(response.Content.Headers.ContentType.MediaType.Equals("application/json"), "response type is not json");
 
             Assert.IsTrue(response.Headers.Single(h => h.Key == "Access-Control-Allow-Origin").Value.FirstOrDefault().Equals("*"), "Missing Allow Origin");
             Assert.IsTrue(response.Headers.Single(h => h.Key == "Access-Control-Allow-Headers").Value.FirstOrDefault().Equals("PP"), "Missing Allow Headers");
@@ -161,8 +161,8 @@ namespace Test
 
             Assert.IsTrue(res.DeviceTime.Length == 19);
             Assert.IsTrue(res.RunningSince.Length == 19);
-            Assert.IsTrue(res.MinRam.Length == 4);
-            Assert.IsTrue(res.MaxRam.Length == 4);
+            Assert.IsTrue(res.MinRam.Length == 3);
+            Assert.IsTrue(res.MaxRam.Length == 3);
             Assert.IsTrue(res.Settings.Length == 9);
 
         }
@@ -216,4 +216,14 @@ namespace Test
         }
 
     }
+
+
+
+    [TestClass]
+    public class testFLoatIntConversions
+    {
+
+  
+    }
+
 }

@@ -74,6 +74,12 @@ const prog_char string_9[] PROGMEM = "-";
 const prog_char string_10[] PROGMEM = ":";
 const prog_char string_11[] PROGMEM = " ";
 
+const prog_char string_12[] PROGMEM = "{";
+const prog_char string_13[] PROGMEM = "\"";
+const prog_char string_14[] PROGMEM = "\":\"";
+const prog_char string_15[] PROGMEM = ",";
+const prog_char string_16[] PROGMEM = "}";
+
 PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 {
 	string_0,
@@ -87,21 +93,30 @@ PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 	string_8,
 	string_9,
 	string_10,
-	string_11
+	string_11,
+	string_12,
+	string_13,
+	string_14,
+	string_15,
+	string_16
 };
 
 
 /* ##################### VARS ##################################### */
 /* this variable is used for following operations:
-datayyMM.jsn //has to be 8.3 format or it will error out! 
+datayyMM.jsn //has to be 8.3 format or it will error out!
 YYYY-MM-dd HH:mm:ss // is 20 chars
 */
 #define LOGFILENAMELENGTH 20 
 char logFileName[LOGFILENAMELENGTH];
+/* "
+123456789012345678901234567890
+{"SOmeFIeldName":"value", */
+char outputResult[50];
 //const char* day[] = { F("NotSet!"), F("Sun"), F("Mon"), F("Tue"), F("Wed"), F("Thu"), F("Fri"), F("Sat") };
 
 byte lastLogTimeMin; //save minute of the last sensor log
-byte lastLogTimeHour; 
+byte lastLogTimeHour;
 byte session[7];     //save session start time here
 byte sessionId[2];   //created session ID here
 
@@ -123,10 +138,13 @@ unsigned char settings[settingsLength];
 analog from  -127 to 128    ??
 digital from  0   to 1      ??
 ~digital from 0   to 1024   ??
+12345678
+-100,14
 => 4 chars + str end = 5 chars  */
-#define SENSORVALUELENGTH 5
-char sensorValue[SENSORVALUELENGTH];
-
+//#define SENSORVALUELENGTH 5
+char sensorValue[5];
+//#define SENSORVALUELENGTH 10
+char sensorFloatValue[10];
 /*2015 or 05 or 22:
 => 4 chars + str end = 5 chars */
 #define DATETIMECONVERSIONLENGTH 5
@@ -135,7 +153,7 @@ char dateTimeConversionValue[DATETIMECONVERSIONLENGTH];
    should be the length of the largest api call (+1 for string end char \0):
    GET /file/12345678.123 or
    PUT /date or
-   U=15&M=12&d=15&h=23&m=55&s=15&w=2  
+   U=15&M=12&d=15&h=23&m=55&s=15&w=2
    A=pass1&*/
 #define BUFSIZ 40
 char request[BUFSIZ];
@@ -154,7 +172,7 @@ void setup() {
 	logInit();
 
 	//sensorValue = (char*)malloc(sizeof(char) * SENSORVALUELENGTH);
-    //dateTimeConversionValue = (char*)malloc(sizeof(char) * DATETIMECONVERSIONLENGTH);
+	//dateTimeConversionValue = (char*)malloc(sizeof(char) * DATETIMECONVERSIONLENGTH);
 
 	pinMode(outputEthernetPin, OUTPUT);                       // set the SS pin as an output (necessary!)
 	digitalWrite(outputEthernetPin, HIGH);                    // but turn off the W5100 chip!
@@ -272,22 +290,14 @@ void sessionTimeStamp(){
 	if (file.open(&root, logFileName, O_CREAT | O_WRITE)) {
 		if (file.isFile()){
 			file.print(F("{"));
-			//file.print(sessionId[0], DEC);
-			//file.print(sessionId[1], DEC);
 
 			if (settings[7] == '1'){ //if logging ram?
-				file.print(F("\"MinRam\":"));
-				file.print(minMaxRam[0], DEC);
-				file.print(F(",\"MaxRam\" :"));
-				file.print(minMaxRam[1], DEC);
-				file.print(F(","));
+				file.print(jsonField(false, "MinRam", showIntSensor(minMaxRam[0]), true, false));
+				file.print(jsonField(false, "MaxRam", showIntSensor(minMaxRam[1]), true, false));
 			}
 
-			file.print(F("\"StartedTime\":\""));
-			printCurrentStringDateToFile(&file, false); //print session start time from session ID
-			file.print(F("\", \"EndedTime\":\""));
-			printCurrentStringDateToFile(&file, true); //print current time
-			file.print(F("\" }                            ")); //space to delete trailing chars from previous session
+			file.print(jsonField(false, "StartedTime", getStringDate(false), true, false));
+			file.print(jsonField(false, "EndedTime", getStringDate(true), false, true));
 
 		}
 		file.close();
@@ -313,6 +323,7 @@ bool readSettings(){
 				}
 				i++;
 			}
+			settings[settingsLength] = 0;
 		}
 		file.close();
 		return true;
@@ -328,6 +339,7 @@ bool readSettings(){
 		settings[6] = '2'; //log frequency in minutes ( 0=10min, 1=30min, 2=60min)
 		settings[7] = '1'; //keep log of free ram per session
 		settings[8] = '1'; //Reboot if can not write to SD
+		settings[settingsLength] = 0;   //terminate
 		saveSettings();
 
 	}
@@ -346,13 +358,18 @@ void saveSettings(){
 				i++;
 			}
 		}
-		file.print(F("                      "));
 		file.close();
 	}
 	else{
 		cryticalError(1);
 	}
 
+}
+
+char* getSettings()
+{
+	settings[settingsLength] = 0;
+	return (char*)settings;
 }
 
 bool isPassCorrect(char *pass)
@@ -390,22 +407,6 @@ sensorValue*
 void LogSensors(bool write, EthernetClient *client)
 {
 
-	//bool na = false;
-	// Reading temperature or humidity takes about 250 milliseconds!
-	// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-	//float h = dht.readHumidity();
-	//// Read temperature as Celsius
-	//float t = dht.readTemperature();
-	// Read temperature as Fahrenheit
-	//float f = dht.readTemperature(true);
-
-	// Check if any reads failed and exit early (to try again).
-	//if (isnan(h) || isnan(t)) {
-	//	/*Serial.println("Failed to read from DHT sensor!");
-	//	return;*/
-	//	na = true;
-	//}
-
 	//AnalogPins: 0,1,2,3 (4 & 5 are reserved for I2C so no need to log it)
 	const uint8_t numOfPins = 4;
 	int sensor = 0;  //int8_t not right
@@ -415,10 +416,9 @@ void LogSensors(bool write, EthernetClient *client)
 		{
 			if (file.isFile()){
 
-				file.print(F("{ \"datetime\":\""));
-				printCurrentStringDateToFile(&file, true);
-				//file.print(F("\", "));
+				file.print(jsonField(true, "datetime", getStringDate(true), true, false));
 
+				//file.print(F("\", "));
 				//for (uint8_t analogPin = 0; analogPin < numOfPins; analogPin++) {
 				//	sensor = analogRead(analogPin);
 				//	file.print(F("\"AnalogPin"));
@@ -432,11 +432,8 @@ void LogSensors(bool write, EthernetClient *client)
 				//	logRamUsage();
 				//}
 
-				file.print(F("\",\"TempC\":"));
-				writeFloatSensor(dht.readTemperature(), &file, NULL);
-				file.print(F(",\"HumPerc\":"));
-				writeFloatSensor(dht.readHumidity(), &file, NULL);
-				file.println(F("}"));
+				file.print(jsonField(false, "TempC", showFloatSensor(dht.readTemperature()), true, false));
+				file.print(jsonField(false, "HumPerc", showFloatSensor(dht.readHumidity()), false, true));
 			}
 			file.close();
 		}
@@ -445,20 +442,11 @@ void LogSensors(bool write, EthernetClient *client)
 		}
 	}
 	else{
-		(*client).print(F("{\"DeviceTime\":\""));
-		printCurrentStringDateToClient(client, true);
-		(*client).print(F("\",\"MinRam\":\""));
-		(*client).print(minMaxRam[0], DEC);
-		(*client).print(F("b\",\"MaxRam\":\""));
-		(*client).print(minMaxRam[1], DEC);
-		(*client).print(F("b\",\"RunningSince\":\""));
-		printCurrentStringDateToClient(client, false);
-		(*client).println(F("\",\"TempC\":"));
-		writeFloatSensor(dht.readTemperature(), NULL, client); // (*client).print(getFloatSensor(dht.readTemperature()));
-		(*client).println(F(",\"HumPerc\":"));
-		writeFloatSensor(dht.readHumidity(), NULL, client); //(*client).print(getFloatSensor(dht.readHumidity()));
 
-		(*client).println(F("}"));
+		printDateRamDetails(client);
+
+		(*client).print(jsonField(false, "TempC", showFloatSensor(dht.readTemperature()), true, false));
+		(*client).print(jsonField(false, "HumPerc", showFloatSensor(dht.readHumidity()), false, true));
 	}
 }
 
@@ -489,25 +477,6 @@ bool isTimeToLog()
 
 }
 
-//void showFloatSensor(float sensor, EthernetClient *client){
-//	if (isnan(sensor)){
-//		(*client).print(F("NA"));
-//	}
-//	else{
-//		(*client).print(sensor, DEC); // snprintf(logFileName, 10, "%f", sensor);
-//	}
-//}
-
-void writeFloatSensor(float sensor, SdFile *file, EthernetClient *client){
-	if (isnan(sensor)){
-		if(file!=NULL) (*file).print(F("NA"));
-		else           (*client).print(F("NA"));
-	}
-	else{
-		if (file != NULL) (*file).print(sensor, DEC); // snprintf(logFileName, 10, "%f", sensor);
-		else              (*client).print(sensor, DEC);
-	}
-}
 #endif
 /* ################# API ########################################################**/
 #ifndef VLAD_COLLAPSE
@@ -528,16 +497,16 @@ void checkForApiRequests()
 				ApiRequest_GetRequestDetails(&client, request, putheader);
 
 				// If settings want us to log http traffic:
-				if (settings[5] == '1') {				
+				if (settings[5] == '1') {
 					logHttp(request, putheader);
-				}				
+				}
 				/*****************************options response**********************************/
 				if (strstr(request, "OPTIONS") != 0) {
 					ApiRequest_GetOptionsScreen(&client);
 				}
 				/***************************** home page ***************************************/
 				if (strcmp(request, "GET /") == 0) { //test if strings are equal
-					if (strstr(putheader, "gzip")!=0)
+					if (strstr(putheader, "gzip") != 0)
 						ApiRequest_GetFile(&client, "index.gz", NULL);
 					else
 						ApiRequest_GetErrorScreen(&client, false, false); // browser not supporting gzip. Alternatively return html?
@@ -604,7 +573,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 
 		puts into 'putheader': PP line
 		- unless it is 'GET /' requests then puts 'Accept-Encoding' line.
-	*/
+		*/
 
 	uint8_t index = 0;
 	uint8_t lineNo = 1;
@@ -612,7 +581,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 	while (c >= 0){
 		// If it isn't a new line, add the character to the buffer
 		if (c != '\n' && c != '\r') {
-			if (index  < BUFSIZ-1)
+			if (index < BUFSIZ - 1)
 			{
 				putheader[index] = c; //read current line
 				index++;
@@ -634,7 +603,7 @@ void ApiRequest_GetRequestDetails(EthernetClient *client, char* request, char* p
 					(strstr(putheader, "PP: ") != 0)
 					)
 				{
-					index = BUFSIZ-1; //stop reading
+					index = BUFSIZ - 1; //stop reading
 				}
 				lineNo++;
 			}
@@ -666,7 +635,7 @@ void ApiRequest_GetSuccessHeader(EthernetClient *client, char* filename)
 	}
 	else
 		ApiRequest_HelpContentTypeHtml(client);
-	
+
 
 	ApiRequest_HelpAccessControllAllow(client, false);
 
@@ -706,7 +675,7 @@ void ApiRequest_ShowSensorStatus(EthernetClient *client){
 }
 
 void ApiRequest_CheckLogInPin(EthernetClient *client, char* pass){
-	
+
 	if (isPassCorrect(pass))
 	{
 		ApiRequest_GetSuccessHeader(client, ".jsn");
@@ -733,13 +702,13 @@ void ApiRequest_GetFile(EthernetClient *client, char* filename, char* putheader)
 {
 	if (
 		(putheader != NULL && isPassCorrect(putheader + 4)) ||  //if admin
-			(putheader == NULL &&
-				(
-					strstr(filename, "data") ||        //or asking data file
-					strstr(filename, "cache.app") ||   //or asking cache file
-					strstr(filename, "index.gz")       //or asking index file
-				)
-			)
+		(putheader == NULL &&
+		(
+		strstr(filename, "data") ||        //or asking data file
+		strstr(filename, "cache.app") ||   //or asking cache file
+		strstr(filename, "index.gz")       //or asking index file
+		)
+		)
 
 		)
 	{
@@ -765,30 +734,10 @@ void ApiRequest_GetSystemSettings(EthernetClient *client, char* putheader)
 {
 	if (isPassCorrect(putheader + 4))
 	{
-		strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[7]))); //'settings.txt'
-		if (file.open(&root, logFileName, O_READ)) {
-			ApiRequest_GetSuccessHeader(client, ".jsn");
+		ApiRequest_GetSuccessHeader(client, ".jsn");
+		printDateRamDetails(client);
+		(*client).println(jsonField(false, "Settings", getSettings(), false, true));
 
-			(*client).print(F("{\"DeviceTime\":\""));
-			printCurrentStringDateToClient(client, true);
-			(*client).print(F("\",\"MinRam\":\""));
-			(*client).print(minMaxRam[0], DEC);
-			(*client).print(F("b\",\"MaxRam\":\""));
-			(*client).print(minMaxRam[1], DEC);
-			(*client).print(F("b\",\"RunningSince\":\""));
-			printCurrentStringDateToClient(client, false);
-			(*client).print(F("\",\"Settings\":\""));
-			int16_t c;
-			while ((c = file.read()) >= 0) {
-				if (c != 32) //trim spaces
-					(*client).print((char)c);
-			}
-			file.close();
-			(*client).print(F("\"}"));
-		}
-		else{			
-			ApiRequest_GetErrorScreen(client, true, true);
-		}
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -836,9 +785,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 			toDec(parameters[12])                 //w			
 			);
 		ApiRequest_GetSuccessHeader(client, ".jsn");
-		(*client).print(F("{\"newdate\":\""));
-		printCurrentStringDateToClient(client, true);
-		(*client).println(F("\"}"));
+		(*client).print(jsonField(true, "newdate", getStringDate(true), false, true));
 	}
 	else{
 		ApiRequest_GetErrorScreen(client, false, true);
@@ -848,7 +795,7 @@ void ApiRequest_PutDateTime(EthernetClient *client, char* putheader, char* param
 void ApiRequest_PutReboot(EthernetClient *client, char* arguments)
 {
 	if (isPassCorrect(arguments + 4))
-	{		
+	{
 		ApiRequest_GetSuccessHeader(client, ".jsn");
 		delay(1);
 		(*client).stop();
@@ -1001,14 +948,6 @@ void readDS3231time(byte *year, byte *month, byte *dayOfMonth, byte *hour, byte 
 }
 
 //print military time as 2000-05-22 13:33:21
-void printCurrentStringDateToFile(SdFile *file, bool getCurrentTime)
-{
-	(*file).print(getStringDate(getCurrentTime));
-}
-void printCurrentStringDateToClient(EthernetClient *client, bool getCurrentTime)
-{
-	(*client).print(getStringDate(getCurrentTime));
-}
 char* getStringDate(bool currentTime)
 {
 
@@ -1100,41 +1039,23 @@ void serialShow(char* line){
 #endif
 }
 
-//void serialShow(byte b){
-//#ifdef SERIALDEBUG
-//	Serial.println(b);
-//#endif
-//}
-//
-//void error(char* line){
-//
-//
-//}
-//
-//void error(const char* line){
-//
-//}
-//
-//void error(const __FlashStringHelper* line)
-//{
-//
-//
-//}
-
 void logHttp(char* line, char* args){
 
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[6]))); //'log.txt'
 	if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
 		if (file.isFile()){
-			file.print(F("{ \"HTTP\":\""));
-			file.print(line);
-			file.print(F("\", \"params\":\""));
-			file.print(args);
-			file.print(F("\", \"datetime\":\""));
-			printCurrentStringDateToFile(&file, true);
-			file.print(F("\" }"));
-			file.println();
-		}
+			file.print(jsonField(true, "HTTP", line, true, false));
+			//file.print(F("{ \"HTTP\":\""));
+			//file.print(line);
+			file.print(jsonField(false, "params", args, true, false));
+			//file.print(F("\", \"params\":\""));
+			//file.print(args);
+			file.print(jsonField(false, "datetime", getStringDate(true), false, true));
+			//file.print(F("\", \"datetime\":\""));
+			//printCurrentStringDateToFile(&file, true);
+			//file.print(F("\" }"));
+			//file.println();
+}
 		file.close();
 	}
 }
@@ -1170,6 +1091,80 @@ void cryticalError(byte Reason){
 #endif
 /*########################### Helpers ############################################*/
 #ifndef VLAD_COLLAPSE
+
+
+char* showFloatSensor(float f)
+{
+	if (isnan(f)) return "NA";
+
+	int whole = (int)((float)f);
+	int dec = (int)(((float)f - whole) * 100);
+
+	strcpy(sensorFloatValue, showIntSensor(whole));
+	strcat(sensorFloatValue, ".");
+	if (dec < 10) strcat(sensorFloatValue, "0");
+	strcat(sensorFloatValue, showIntSensor(dec));
+	return sensorFloatValue;
+}
+
+char* showIntSensor(int sensor){
+
+	int i, rem;
+
+	int n = sensor;
+	int len = 0;
+	while (n != 0)
+	{
+		len++;
+		n /= 10;
+	}
+
+	n = sensor;
+	for (i = 0; i < len; i++)
+	{
+		rem = n % 10;
+		n = n / 10;
+		sensorValue[len - (i + 1)] = rem + '0';
+	}
+	sensorValue[len] = '\0';
+	return sensorValue;
+}
+
+char* jsonField(bool isStart, char* str, char* val, bool postfix, bool isEnd){
+	// {"str":"val", ... }
+
+	strcpy(outputResult, "");
+	if (isStart) strcat_P(outputResult, (char*)pgm_read_word(&(string_table[12]))); // {
+	strcat_P(outputResult, (char*)pgm_read_word(&(string_table[13]))); // "
+	strcat(outputResult, str);
+	strcat_P(outputResult, (char*)pgm_read_word(&(string_table[14]))); // ":"
+	strcat(outputResult, val);
+	strcat_P(outputResult, (char*)pgm_read_word(&(string_table[13]))); // "
+	if (postfix) strcat_P(outputResult, (char*)pgm_read_word(&(string_table[15]))); // ,
+	if (isEnd) {
+		strcat_P(outputResult, (char*)pgm_read_word(&(string_table[16]))); // }
+		strcat(outputResult, "\n");
+	}
+
+	return outputResult;
+}
+
+void printDateRamDetails(EthernetClient *client)
+{
+	(*client).print(jsonField(true, "DeviceTime", getStringDate(true), true, false));
+	//(*client).print(F("{\"DeviceTime\":\""));
+	//printCurrentStringDateToClient(client, true);
+	(*client).print(jsonField(false, "MinRam", showIntSensor(minMaxRam[0]), true, false));
+	//(*client).print(F("\",\"MinRam\":\""));
+	//(*client).print(minMaxRam[0], DEC);
+	(*client).print(jsonField(false, "MaxRam", showIntSensor(minMaxRam[1]), true, false));
+	//(*client).print(F("b\",\"MaxRam\":\""));
+	//(*client).print(minMaxRam[1], DEC);
+	(*client).print(jsonField(false, "RunningSince", getStringDate(false), true, false));
+	//(*client).print(F("b\",\"RunningSince\":\""));
+	//printCurrentStringDateToClient(client, false);
+
+}
 
 #endif
 
