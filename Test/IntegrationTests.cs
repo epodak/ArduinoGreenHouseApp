@@ -161,8 +161,8 @@ namespace Test
 
             Assert.IsTrue(res.DeviceTime.Length == 19);
             Assert.IsTrue(res.RunningSince.Length == 19);
-            Assert.IsTrue(res.MinRam.Length == 3);
-            Assert.IsTrue(res.MaxRam.Length == 3);
+            Assert.IsTrue(res.MinRam.Length >= 3);
+            Assert.IsTrue(res.MaxRam.Length >= 3);
             Assert.IsTrue(res.Settings.Length == 9);
 
         }

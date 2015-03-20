@@ -14,6 +14,8 @@ SPI SD CS: 4
 #include <Wire.h>
 #include <avr/pgmspace.h> //flash, fast, 10,000x 
 //#include <avr/eeprom.h>   //slow (3ms) [therefore use it only for startup variables], 100,000x 
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #ifndef VLAD_COLLAPSE
 
@@ -22,9 +24,23 @@ SPI SD CS: 4
 #define DS3231_I2C_ADDRESS 0x68
 #define outputEthernetPin 10
 #define outputSdPin 4
+#define oneWirePin 9
 //#define outputLcdPin 8
 #define SDISPEED SPI_HALF_SPEED
 //  SPI_FULL_SPEED
+
+#define DS18S20_ID 0x10
+#define DS18B20_ID 0x28
+
+/* ################# OneWire ############################ */
+float temp;
+//#define SHOWTEMP
+#ifdef  SHOWTEMP
+OneWire bus(oneWirePin);
+DallasTemperature sensors(&bus);
+DeviceAddress sensor1;
+DeviceAddress sensor2;
+#endif
 
 /* ##################### temperature humidity ##################### */
 #define DHTPIN 2     // what pin we're connected to
@@ -48,17 +64,42 @@ void(*resetFunc) (void) = 0;  //declare reset function @ address 0
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 byte ip[] = { 192, 168, 1, 120 };
 EthernetServer server(8080);
+/* on API web client call, how much of the web request string we need to know how to respond: (GET /... )
+should be the length of the largest api call (+1 for string end char \0):
+GET /file/12345678.123 or
+PUT /date or
+U=15&M=12&d=15&h=23&m=55&s=15&w=2
+A=pass1&*/
+#define BUFSIZ 40
+char request[BUFSIZ];
+char putheader[BUFSIZ];
 
+/* Our web server will timeout in this many ms */
+//#define TIMEOUTMS 2000
 /* ##################### SDCARD ################################### */
 Sd2Card card;
 SdVolume volume;
 SdFile root;
 SdFile file;
 
+/* this variable is used for following operations:
+datayyMM.jsn //has to be 8.3 format or it will error out!
+YYYY-MM-dd HH:mm:ss // is 20 chars
+*/
+#define LOGFILENAMELENGTH 20 
+char logFileName[LOGFILENAMELENGTH];
 /* ##################### TIMER #################################### */
 byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
 
+/*2015 or 05 or 22:
+=> 4 chars + str end = 5 chars */
+#define DATETIMECONVERSIONLENGTH 5
+char dateTimeConversionValue[DATETIMECONVERSIONLENGTH];
+
+byte lastLogTimeMin; //save minute of the last sensor log
+byte lastLogTimeHour;
 /* ##################### PROGMEM ################################## */
+#ifndef VLAD_COLLAPSE
 //for every copy of the program to the device it is writing to flash memmory (progmem) 
 //therefore after we wrote this data once, we only reference it afterwards (thats why is commented)
 const prog_char string_0[] PROGMEM = "0";   // "String 0" etc are strings to store - change to suit.
@@ -101,22 +142,16 @@ PROGMEM const char *string_table[] = 	   // change "string_table" name to suit
 	string_16
 };
 
-
+#endif
 /* ##################### VARS ##################################### */
-/* this variable is used for following operations:
-datayyMM.jsn //has to be 8.3 format or it will error out!
-YYYY-MM-dd HH:mm:ss // is 20 chars
-*/
-#define LOGFILENAMELENGTH 20 
-char logFileName[LOGFILENAMELENGTH];
+
 /* "
 123456789012345678901234567890
 {"SOmeFIeldName":"value", */
 char outputResult[50];
 //const char* day[] = { F("NotSet!"), F("Sun"), F("Mon"), F("Tue"), F("Wed"), F("Thu"), F("Fri"), F("Sat") };
 
-byte lastLogTimeMin; //save minute of the last sensor log
-byte lastLogTimeHour;
+
 byte session[7];     //save session start time here
 byte sessionId[2];   //created session ID here
 
@@ -145,27 +180,11 @@ digital from  0   to 1      ??
 char sensorValue[5];
 //#define SENSORVALUELENGTH 10
 char sensorFloatValue[10];
-/*2015 or 05 or 22:
-=> 4 chars + str end = 5 chars */
-#define DATETIMECONVERSIONLENGTH 5
-char dateTimeConversionValue[DATETIMECONVERSIONLENGTH];
-/* on API web client call, how much of the web request string we need to know how to respond: (GET /... )
-   should be the length of the largest api call (+1 for string end char \0):
-   GET /file/12345678.123 or
-   PUT /date or
-   U=15&M=12&d=15&h=23&m=55&s=15&w=2
-   A=pass1&*/
-#define BUFSIZ 40
-char request[BUFSIZ];
-char putheader[BUFSIZ];
 
-/* Our web server will timeout in this many ms */
-//#define TIMEOUTMS 2000
+
 #endif
 
 //#define SERIALDEBUG
-
-
 
 void setup() {
 
@@ -176,6 +195,7 @@ void setup() {
 
 	pinMode(outputEthernetPin, OUTPUT);                       // set the SS pin as an output (necessary!)
 	digitalWrite(outputEthernetPin, HIGH);                    // but turn off the W5100 chip!
+	//pinMode(53, OUTPUT);
 
 	Wire.begin();
 
@@ -187,6 +207,9 @@ void setup() {
 	initRamUsage(); //will set start amout of ram usage - min most likely
 
 	dht.begin();
+#ifdef  SHOWTEMP
+	sensors.begin();
+#endif
 }
 
 void loop()
@@ -265,7 +288,7 @@ void sessionStart(){
 					while ((c = file.read()) > 0) {
 						fileTo.print((char)c);
 					}
-					fileTo.println();
+					//fileTo.println();
 				}
 				fileTo.close();
 			} //end if fileTo.open
@@ -289,14 +312,14 @@ void sessionTimeStamp(){
 	strcpy_P(logFileName, (char*)pgm_read_word(&(string_table[5]))); //'session.txt'
 	if (file.open(&root, logFileName, O_CREAT | O_WRITE)) {
 		if (file.isFile()){
-			file.print(F("{"));
+
+			file.print(jsonField(true, "StartedTime", getStringDate(false), true, false));
 
 			if (settings[7] == '1'){ //if logging ram?
 				file.print(jsonField(false, "MinRam", showIntSensor(minMaxRam[0]), true, false));
 				file.print(jsonField(false, "MaxRam", showIntSensor(minMaxRam[1]), true, false));
 			}
-
-			file.print(jsonField(false, "StartedTime", getStringDate(false), true, false));
+			
 			file.print(jsonField(false, "EndedTime", getStringDate(true), false, true));
 
 		}
@@ -408,9 +431,17 @@ void LogSensors(bool write, EthernetClient *client)
 {
 
 	//AnalogPins: 0,1,2,3 (4 & 5 are reserved for I2C so no need to log it)
-	const uint8_t numOfPins = 4;
-	int sensor = 0;  //int8_t not right
+	//const uint8_t numOfPins = 4;
+	//int sensor = 0;  //int8_t not right
+#ifdef  SHOWTEMP
+	bool s1 = sensors.getAddress(sensor1, 0);
+	bool s2 = sensors.getAddress(sensor2, 1);
+	
+	sensors.requestTemperatures();
+#endif
 
+
+	//bool found = getTemperature();
 	if (write){
 		if (file.open(root, getCurrentLogFileName(), O_CREAT | O_APPEND | O_WRITE))//Open or create the file
 		{
@@ -432,8 +463,15 @@ void LogSensors(bool write, EthernetClient *client)
 				//	logRamUsage();
 				//}
 
+				
+				//if (found) file.print(jsonField(false, "W1TempC", showFloatSensor(temp), true, false));
+#ifdef  SHOWTEMP
+				if (s1) file.print(jsonField(false, "W1TempC", showFloatSensor(sensors.getTempC(sensor1)), true, false));
+				if (s2) file.print(jsonField(false, "W2TempC", showFloatSensor(sensors.getTempC(sensor2)), true, false));
+#endif
 				file.print(jsonField(false, "TempC", showFloatSensor(dht.readTemperature()), true, false));
 				file.print(jsonField(false, "HumPerc", showFloatSensor(dht.readHumidity()), false, true));
+
 			}
 			file.close();
 		}
@@ -445,6 +483,10 @@ void LogSensors(bool write, EthernetClient *client)
 
 		printDateRamDetails(client);
 
+#ifdef  SHOWTEMP
+		if (s1) (*client).print(jsonField(false, "W1TempC", showFloatSensor(sensors.getTempC(sensor1)), true, false));
+		if (s2) (*client).print(jsonField(false, "W2TempC", showFloatSensor(sensors.getTempC(sensor2)), true, false));
+#endif
 		(*client).print(jsonField(false, "TempC", showFloatSensor(dht.readTemperature()), true, false));
 		(*client).print(jsonField(false, "HumPerc", showFloatSensor(dht.readHumidity()), false, true));
 	}
@@ -458,7 +500,7 @@ bool isTimeToLog()
 	if (settings[6] == '0'){ min = 10; }     //log lines: 6/h, 144/d, 4320/month
 	else if (settings[6] == '1'){ min = 30; }//log lines: 2/h, 48/d,  1488/month
 	//else if (settings[6] == '2'){ min = 60; }//log lines: 1/h, 24/d,  744/month
-	else { min = 60; } //default (anything > 59 wil log at 0 mins since 0 % anything = 0!
+	else { min = 60; } //default (anything > 59 wil log at only 0 mins since 0 % anything = 0!
 	/* get current date: */
 	readDS3231time(&year, &month, &dayOfMonth, &hour, &minute, &second, &dayOfWeek);
 	/* last log date is inside lastLogTime */
@@ -821,12 +863,12 @@ void ApiRequest_HelpConnectionClose(EthernetClient *client)
 
 void ApiRequest_HelpAccessControllAllow(EthernetClient *client, bool option)
 {
-	if (true){ //if settings allow other javascript websites to query our api
+	//if (true){ //if settings allow other javascript websites to query our api
 		if (option) (*client).println(F("Allow: GET, PUT, POST, OPTIONS"));
 		(*client).println(F("Access-Control-Allow-Origin: *"));
 		(*client).println(F("Access-Control-Allow-Headers: PP"));
 		if (option) (*client).println(F("Access-Control-Allow-Methods: GET, PUT, POST, OPTIONS"));
-	}
+	//}
 }
 
 void ApiRequest_HelpContentTypeHtml(EthernetClient *client)
@@ -1025,6 +1067,46 @@ char* getCurrentLogFileName(){
 //}
 
 #endif
+
+/*############################ Temperature #######################################*/
+#ifndef VLAD_COLLAPSE
+
+//
+//boolean getTemperature(){
+//	byte i;
+//	byte present = 0;
+//	byte data[12];
+//	byte addr[8];
+//	//find a device
+//	//if (!ds.search(addr)) {
+//	//	ds.reset_search();
+//	//	return false;
+//	//}
+//	if (OneWire::crc8(addr, 7) != addr[7]) {
+//		return false;
+//	}
+//	if (addr[0] != DS18S20_ID && addr[0] != DS18B20_ID) {
+//		return false;
+//	}
+//	ds.reset();
+//	ds.select(addr);
+//	// Start conversion
+//	ds.write(0x44, 1);
+//	// Wait some time...
+//	delay(850);
+//	present = ds.reset();
+//	ds.select(addr);
+//	// Issue Read scratchpad command
+//	ds.write(0xBE);
+//	// Receive 9 bytes
+//	for (i = 0; i < 9; i++) {
+//		data[i] = ds.read();
+//	}
+//	// Calculate temperature value
+//	temp = ((data[1] << 8) + data[0])*0.0625;
+//	return true;
+//	}
+#endif
 /*############################ Loging ############################################*/
 #ifndef VLAD_COLLAPSE
 void logInit(){
@@ -1045,16 +1127,8 @@ void logHttp(char* line, char* args){
 	if (file.open(&root, logFileName, O_APPEND | O_WRITE | O_CREAT)) {
 		if (file.isFile()){
 			file.print(jsonField(true, "HTTP", line, true, false));
-			//file.print(F("{ \"HTTP\":\""));
-			//file.print(line);
 			file.print(jsonField(false, "params", args, true, false));
-			//file.print(F("\", \"params\":\""));
-			//file.print(args);
 			file.print(jsonField(false, "datetime", getStringDate(true), false, true));
-			//file.print(F("\", \"datetime\":\""));
-			//printCurrentStringDateToFile(&file, true);
-			//file.print(F("\" }"));
-			//file.println();
 }
 		file.close();
 	}
@@ -1093,6 +1167,18 @@ void cryticalError(byte Reason){
 #ifndef VLAD_COLLAPSE
 
 
+//char* showFloatSensorN(float fsensor){
+//	int res = sprintf(sensorFloatValue, "%.2f", fsensor);
+//	if (res < 0) return "NA";
+//	else return sensorFloatValue;
+//}
+//
+//char* showIntSensorN(int isensor){
+//	int res = sprintf(sensorValue, "%i", isensor);
+//	if (res < 0) return "NA";
+//	else return sensorValue;
+//}
+
 char* showFloatSensor(float f)
 {
 	if (isnan(f)) return "NA";
@@ -1126,7 +1212,7 @@ char* showIntSensor(int sensor){
 		n = n / 10;
 		sensorValue[len - (i + 1)] = rem + '0';
 	}
-	sensorValue[len] = '\0';
+	sensorValue[len] = 0; // '\0';
 	return sensorValue;
 }
 
@@ -1152,18 +1238,9 @@ char* jsonField(bool isStart, char* str, char* val, bool postfix, bool isEnd){
 void printDateRamDetails(EthernetClient *client)
 {
 	(*client).print(jsonField(true, "DeviceTime", getStringDate(true), true, false));
-	//(*client).print(F("{\"DeviceTime\":\""));
-	//printCurrentStringDateToClient(client, true);
 	(*client).print(jsonField(false, "MinRam", showIntSensor(minMaxRam[0]), true, false));
-	//(*client).print(F("\",\"MinRam\":\""));
-	//(*client).print(minMaxRam[0], DEC);
 	(*client).print(jsonField(false, "MaxRam", showIntSensor(minMaxRam[1]), true, false));
-	//(*client).print(F("b\",\"MaxRam\":\""));
-	//(*client).print(minMaxRam[1], DEC);
 	(*client).print(jsonField(false, "RunningSince", getStringDate(false), true, false));
-	//(*client).print(F("b\",\"RunningSince\":\""));
-	//printCurrentStringDateToClient(client, false);
-
 }
 
 #endif

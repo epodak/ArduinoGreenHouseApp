@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html manifest="cache.app">
+<html manifest="cache.app1">
 <!---->
 <head>
   <title>Green House</title>
@@ -15,27 +15,18 @@
 
   <style type="text/css">
     textarea#fileContent {
-     width: 100%;
-     height: 200px;
-     -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
-     -moz-box-sizing: border-box;    /* Firefox, other Gecko */
-     box-sizing: border-box;         /* Opera/IE 8+ */
+      width: 100%;
+      height: 200px;
+      -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+      -moz-box-sizing: border-box; /* Firefox, other Gecko */
+      box-sizing: border-box; /* Opera/IE 8+ */
     }
-    .green {
-      color: green;
-    }
-
-    .yellow {
-      color: yellow;
-    }
-
-    .red {
-      color: #a94442;
-    }
-
-    input.error:focus {
-      box-shadow: 0 0 1px 1px red !important;
-    }
+    .green { color: green; }
+    .yellow { color: yellow; }
+    .red { color: #a94442; }
+    input.error:focus { box-shadow: 0 0 1px 1px red !important; }
+    .tdrefresh { cursor:pointer; }
+    table.table>tbody>tr>td.tdrefresh:hover { background-color: #a4d091 !important; }
 
     /* page link */
     div[ng-view].ng-enter {
@@ -54,6 +45,20 @@
       animation: fadeOut 0.5s;
       display: block !important;
     }
+
+
+    /* ng-hide and ng-show */
+    span.ng-hide-remove {
+      -webkit-animation: flash 0.5s;
+      animation: flash 0.5s;
+    }
+
+    span.ng-hide-add {
+      -webkit-animation: none;
+      animation: none;
+      
+    }
+
   </style>
 </head>
 <body>
@@ -97,117 +102,131 @@
 
   <script type="text/ng-template" id="home.html">
 
-    <div class="row">
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>User Options</caption>
-          <tbody>
-            <tr class="success">
-              <td>
 
-                <i class="fa fa-refresh fa-lg green" style="position:relative;top:10px; "></i>
-                <span>2015 May 22 13:32:15</span><br />
-                <small style="margin-left:20px;">Click to refresh new data</small>
+    <div cg-busy="loading">
+      <div ng-show="loaded">
+        <div class="row">
+          <div class="col-sm-6 table-responsive">
+            <table class="table">
+              <caption>User Options</caption>
+              <tbody>
+                <tr class="success">
+                  <td ng-click="load()"class="tdrefresh">
 
-              </td>
-              <td>
-                <div class="btn-group" role="group">
-                  <span type="button" class="btn btn-primary active">C&deg;</span>
-                  <span type="button" class="btn btn-default">F&deg;</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div><!-- /.col-sm-6 -->
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>System statistics</caption>
-          <tbody>
-            <tr class="success">
-              <td><i class="fa fa-heartbeat green"></i> System running for <span>4 days</span> since last reboot </td>
-            </tr>
-            <tr class="success">
-              <td><i class="fa fa-tachometer green"></i> System is healthy with <span>417</span>b or Free RAM</td>
-            </tr>
-          </tbody>
-        </table>
+                    <i class="fa fa-refresh fa-lg green" style="position:relative;top:10px; "></i>
+                    <span>{{time | amDateFormat:'MMMM Do YYYY, HH:mm:ss (dd)' }} </span> <small class="text-info"> ({{timeSinceText}} ago)</small><br />
+                    <small style="margin-left:20px;">Click to refresh new data</small>
+
+                  </td>
+                  <td>
+                    <div class="btn-group pull-right" role="group">
+                      <span ng-click="tempFormat='C'" type="button" class="btn btn-default" ng-class="{ 'btn-primary active': tempFormat == 'C'}">C&deg;</span>
+                      <span ng-click="tempFormat='F'" type="button" class="btn btn-default" ng-class="{ 'btn-primary active': tempFormat == 'F'}">F&deg;</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div><!-- /.col-sm-6 -->
+          <div class="col-sm-6 table-responsive">
+            <table class="table">
+              <caption>System statistics</caption>
+              <tbody>
+                <tr class="success">
+                  <td><i class="fa fa-heartbeat green"></i>  System running for <strong><span class="green">{{runningSinceText}}</span></strong> since last reboot </td>
+                </tr>
+                <tr class="success">
+                  <td><i class="fa fa-tachometer green"></i> System is healthy with <strong><span class="green">{{minRam}}</span></strong> to <strong><span class="green">{{maxRam}}</span></strong> of Free RAM</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div><!--/row-->
+
+        <div class="row">
+          <div class="col-sm-6 table-responsive">
+            <table class="table">
+              <caption>Air statistics</caption>
+              <thead>
+                <tr class="bg-primary"><td>Air</td><td> Out</td><td>In</td></tr>
+              </thead>
+              <tbody>
+                <tr class="success"><td>Temperature</td><td><span class="badge"><span ng-show="tempFormat == 'C'">{{temperature.c}} C&deg;</span> <span ng-hide="tempFormat == 'C'">{{temperature.f}} F&deg;</span></span></td><td></td></tr>
+                <tr class="success"><td>Humidity</td><td> <span class="badge"><span>{{humidityPercentage}} &#37;</span> </span></td><td><!--<span class="badge">80 &#37;</span>--></td></tr>
+                <tr class="success"><td>Heat Index</td><td> <span class="badge"><span ng-show="tempFormat == 'C'">{{heatIndex.c}} C&deg;</span> <span ng-hide="tempFormat == 'C'">{{heatIndex.f}} F&deg;</span> </span></td><td><!--<span class="badge">32 </span>--></td></tr>
+                <tr class="success"><td>Light</td><td> <!--<span class="badge">780 lux</span>--></td><td><!--<span class="badge">780 lux</span>--></td></tr>
+              </tbody>
+            </table>
+          </div><!-- /.col-sm-6 -->
+          <div class="col-sm-6  table-responsive">
+            <table class="table">
+              <caption>Water Statistics</caption>
+              <thead>
+                <tr class="bg-primary"><td>Water</td><td></td></tr>
+              </thead>
+              <tbody>
+                <tr class="success"><td>Pool Level</td><td><span class="badge">5 m</span></td></tr>
+                <tr class="success"><td>Top Temperature</td><td><span class="badge">12 C&deg;</span></td></tr>
+                <tr class="success"><td>Bottom Temperature</td><td><span class="badge">12 C&deg; </span></td></tr>
+                <tr class="success"><td>Pump Running</td><td><i class="fa fa-cog fa-spin fa-lg green"></i></td></tr>
+              </tbody>
+            </table>
+
+          </div><!-- /.col-sm-6 -->
+        </div><!--/row-->
+
+        <div class="row">
+
+          <canvas id="myChart" width="400" height="400"></canvas>
+        </div>
+
+          <div class="row">
+            <div class="col-sm-6 table-responsive">
+              <table class="table">
+                <caption>Bed statistics</caption>
+                <thead>
+                  <tr class="bg-primary"><td>Bed</td><td> Level</td><td></td></tr>
+                </thead>
+                <tbody>
+                  <tr class="success"><td>BED A</td><td><span class="badge">1</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+                  <tr class="success"><td>BED B</td><td><span class="badge">1</span></td><td><span class="badge">80 &#37;</span></td></tr>
+                  <tr class="success"><td>BED C</td><td><span class="badge">1 </span></td><td><span class="badge">32 </span></td></tr>
+                  <tr class="success"><td>BED D</td><td><span class="badge">1</span></td><td><span class="badge">780 lux</span></td></tr>
+                  <tr class="success"><td>BED A</td><td><span class="badge">2</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
+                  <tr class="success"><td>BED B</td><td><span class="badge">2</span></td><td><span class="badge">80 &#37;</span></td></tr>
+                  <tr class="success"><td>BED C</td><td><span class="badge">2</span></td><td><span class="badge">32 </span></td></tr>
+                  <tr class="success"><td>BED D</td><td><span class="badge">2</span></td><td><span class="badge">780 lux</span></td></tr>
+                </tbody>
+              </table>
+            </div><!-- /.col-sm-6 -->
+            <div class="col-sm-6  table-responsive">
+              <table class="table">
+                <caption>Tower Statistics</caption>
+                <thead>
+                  <tr class="bg-primary"><td>Tower</td><td></td></tr>
+                </thead>
+                <tbody>
+                  <tr class="success"><td>Tower 1</td><td><span class="badge">5 m</span></td></tr>
+                  <tr class="success"><td>Tower 2</td><td><span class="badge">5 m</span></td></tr>
+                  <tr class="success"><td>Tower 3</td><td><span class="badge">5 m</span></td></tr>
+                  <tr class="success"><td>Tower 4</td><td><span class="badge">5 m</span></td></tr>
+                  <tr class="success"><td>Tower 5</td><td><span class="badge">5 m</span></td></tr>
+                  <tr class="success"><td>Tower 6</td><td><span class="badge">5 m</span></td></tr>
+                  <tr class="success"><td>Tower 7</td><td><span class="badge">5 m</span></td></tr>
+                  <tr class="success"><td>Tower 8</td><td><span class="badge">5 m</span></td></tr>
+
+                </tbody>
+              </table>
+
+            </div>
+          </div><!--/row-->
+        </div>
+    </div>
+    <div ng-hide="loaded">
+      <div class="col-sm-12">
+        Could not load data. Please <a href="" ng-click="load()">refresh</a>
       </div>
     </div>
-
-    <div class="row">
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>Air statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Air</td><td> Out</td><td>In</td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>Temperature</td><td><span class="badge">10 C&deg;</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
-            <tr class="success"><td>Humidity</td><td> <span class="badge">80 &#37;</span></td><td><span class="badge">80 &#37;</span></td></tr>
-            <tr class="success"><td>Heat Index</td><td> <span class="badge">32 </span></td><td><span class="badge">32 </span></td></tr>
-            <tr class="success"><td>Light</td><td> <span class="badge">780 lux</span></td><td><span class="badge">780 lux</span></td></tr>
-          </tbody>
-        </table>
-      </div><!-- /.col-sm-6 -->
-      <div class="col-sm-6  table-responsive">
-        <table class="table">
-          <caption>Water Statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Water</td><td></td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>Pool Level</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Top Temperature</td><td><span class="badge">12 C&deg;</span></td></tr>
-            <tr class="success"><td>Bottom Temperature</td><td><span class="badge">12 C&deg; </span></td></tr>
-            <tr class="success"><td>Pump Running</td><td><i class="fa fa-cog fa-spin fa-lg green"></i></td></tr>
-          </tbody>
-        </table>
-
-      </div><!-- /.col-sm-6 -->
-    </div><!--/row-->
-
-    <div class="row">
-      <div class="col-sm-6 table-responsive">
-        <table class="table">
-          <caption>Bed statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Bed</td><td> Level</td><td></td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>BED A</td><td><span class="badge">1</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
-            <tr class="success"><td>BED B</td><td><span class="badge">1</span></td><td><span class="badge">80 &#37;</span></td></tr>
-            <tr class="success"><td>BED C</td><td><span class="badge">1 </span></td><td><span class="badge">32 </span></td></tr>
-            <tr class="success"><td>BED D</td><td><span class="badge">1</span></td><td><span class="badge">780 lux</span></td></tr>
-            <tr class="success"><td>BED A</td><td><span class="badge">2</span></td><td><span class="label-success badge">10 C&deg;</span></td></tr>
-            <tr class="success"><td>BED B</td><td><span class="badge">2</span></td><td><span class="badge">80 &#37;</span></td></tr>
-            <tr class="success"><td>BED C</td><td><span class="badge">2</span></td><td><span class="badge">32 </span></td></tr>
-            <tr class="success"><td>BED D</td><td><span class="badge">2</span></td><td><span class="badge">780 lux</span></td></tr>
-          </tbody>
-        </table>
-      </div><!-- /.col-sm-6 -->
-      <div class="col-sm-6  table-responsive">
-        <table class="table">
-          <caption>Tower Statistics</caption>
-          <thead>
-            <tr class="bg-primary"><td>Tower</td><td></td></tr>
-          </thead>
-          <tbody>
-            <tr class="success"><td>Tower 1</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 2</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 3</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 4</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 5</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 6</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 7</td><td><span class="badge">5 m</span></td></tr>
-            <tr class="success"><td>Tower 8</td><td><span class="badge">5 m</span></td></tr>
-
-          </tbody>
-        </table>
-
-      </div>
-    </div>
-
   </script>
 
   <script type="text/ng-template" id="login.html">
@@ -542,7 +561,7 @@
   </script>
 
   <script id="routing">
-    angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy', 'angularMoment', 'ngMessages']).
+    angular.module('greenhouse', ['ngRoute', 'ngAnimate', 'cgBusy', 'angularMoment', 'ngMessages', 'chart.js']).
       config(['$routeProvider', function ($routeProvider) {
         $routeProvider.
          when("/", { templateUrl: "home.html", controller: "homeController" }).
@@ -569,6 +588,8 @@
           setTime: setTime,
 
           getSensorData: getSensorData,
+          getSensorStatus: getSensorStatus,
+
           getFileList: getFileList,
           getFile: getFile,
 
@@ -614,7 +635,6 @@
           });
         }
         //#endregion
-        ////#region getTime
         //#region setTime
         function setTime(t) {
 
@@ -627,16 +647,22 @@
         //#endregion
         //#region getSensotData
         function getSensorData(month, year) {
-
-          // date time, AirTin, AitTout, HumidityIn, Humidity out, LIghtIn, LightOut, HeatIndexIn, HeatIndexout
-          return "[{'', 1, 1.2, 2, 2.5, 3.1, 5, 3, 2 }, ]";
-          //return $http({
-          //  method: "put",
-          //  headers: { 'PP': sessionStorage.getItem('pass') },
-          //  url: host + '/clock?U=' + t
-          //});
+          //DATA1503.JSN
+          return $http({
+            method: "get",
+            url: host + '/data' + year + month + '.jsn'
+          });
         }
         //#endregion
+        //#region getSensotData
+        function getSensorStatus() {
+          return $http({
+            method: "get",
+            url: host + '/status'
+          });
+        }
+        //#endregion
+
         //#region getFileList
         function getFileList() {
 
@@ -648,7 +674,7 @@
         }
         //#endregion
         //#region getFile
-        function getFile(filename) {          
+        function getFile(filename) {
           return $http({
             method: "get",
             headers: { 'PP': sessionStorage.getItem('pass') },
@@ -694,11 +720,128 @@
   </script>
   <script id="home">
     angular.module('greenhouse').
-      controller('homeController', ['$scope', 'greenApiService', function ($scope, greenApiService) {
+      controller('homeController', ['$scope', 'greenApiService', 'NotifierService', '$q', '$interval',
+                           function ($scope, greenApiService, NotifierService, $q, $interval) {
+
+                             $scope.tempFormat = "C"; //or "F"
+                             $scope.loaded = true; //if false shows alternate screen if API fails to refresh
+                             $scope.loading; //used to show system backdrop
+
+                             $scope.runningSince;
+                             $scope.runningSinceText;
+
+                             $scope.minRam;
+                             $scope.maxRam;
+
+                             $scope.temperature = { c: 0.0, f: 0.0 };
+                             $scope.humidityPercentage;
+                             $scope.heatIndex = { c: 0.0, f: 0.0 };
+
+                             $scope.time; //stores moment format of the date on the device
+                             $scope.timeLocal;
+                             $scope.timeSinceText;
+
+                             //functions:
+                             $scope.load = load;
+                             $scope.heatIndex = heatIndex;
+
+                             $scope.load();
+
+                             //private:
+                             function runningTime() {                              
+                               $scope.timeSinceText = moment().from($scope.timeLocal, true);
+                             }
+
+                             function C2F(cel) {
+                               return Math.round(((cel * 1.8) + 32)* 100) / 100;
+                             }
+
+                             function F2C(far) {
+                               return Math.round(((far - 32) * 0.556) * 100) / 100;
+                             }
+
+                             //public:
+                             /*
+                             RHumidity = Relative Humidity in %
+                             tempair = air temperature in F
+                             */
+                             // Heat index computed using air temperature F and RH%                              
+                             function heatIndex(tempair, RHumidity) {
+                               var hi;
+                                 if (RHumidity > 100) {
+                                   return 'NA'; //Relative humidity cannot exceed 100%
+                                 }
+                                 else if (RHumidity < 0) {
+                                   return 'NA'; //Relative humidity cannot be less than 0%
+                                 }
+                                 else if (tempair <= 40.0) {
+                                   hi = tempair;
+                                 }
+                                 else {
+                                   var hitemp = 61.0 + ((tempair - 68.0) * 1.2) + (RHumidity * 0.094);
+                                   var fptemp = parseFloat(tempair);
+                                   var hifinal = 0.5 * (fptemp + hitemp);
+
+                                   if (hifinal > 79.0) {
+                                     hi = -42.379 + 2.04901523 * tempair + 10.14333127 * RHumidity - 0.22475541 * tempair * RHumidity - 6.83783 * (Math.pow(10, -3)) * (Math.pow(tempair, 2)) - 5.481717 * (Math.pow(10, -2)) * (Math.pow(RHumidity, 2)) + 1.22874 * (Math.pow(10, -3)) * (Math.pow(tempair, 2)) * RHumidity + 8.5282 * (Math.pow(10, -4)) * tempair * (Math.pow(RHumidity, 2)) - 1.99 * (Math.pow(10, -6)) * (Math.pow(tempair, 2)) * (Math.pow(RHumidity, 2));
+                                     if ((RHumidity <= 13) && (tempair >= 80.0) && (tempair <= 112.0)) {
+                                       var adj1 = (13.0 - RHumidity) / 4.0;
+                                       var adj2 = Math.sqrt((17.0 - Math.abs(tempair - 95.0)) / 17.0);
+                                       var adj = adj1 * adj2;
+                                       hi = hi - adj;
+                                     }
+                                     else if ((RHumidity > 85.0) && (tempair >= 80.0) && (tempair <= 87.0)) {
+                                       var adj1 = (RHumidity - 85.0) / 10.0;
+                                       var adj2 = (87.0 - tempair) / 5.0;
+                                       var adj = adj1 * adj2;
+                                       hi = hi + adj;
+                                     }
+                                   }
+                                   else {
+                                     hi = hifinal;
+                                   }
+                                 }
+                                 var heatindex = Math.round(hi * 100) / 100; // + " F" + " / " + Math.round((hi - 32) * .556) + " C";
+                                 var tempc2 = (tempair - 32) * .556;
+                                 var rh2 = 1 - RHumidity / 100;
+                                 var tdpc2 = tempc2 - (((14.55 + .114 * tempc2) * rh2) + (Math.pow(((2.5 + .007 * tempc2) * rh2), 3)) + ((15.9 + .117 * tempc2)) * (Math.pow(rh2, 14)));
+
+                                 return heatindex;
+
+                             }
+
+                             function load() {
+                               $scope.loaded = true;
 
 
+                               $scope.loading = greenApiService.getSensorStatus().then(
+                                   function success(data) {
 
-      }]);
+                                     $scope.time = moment(data.data.DeviceTime, "YYYY-MM-DD HH:mm:ss");
+                                     $scope.timeSinceText = moment(data.data.DeviceTime, "YYYY-MM-DD HH:mm:ss");
+                                     $scope.runningSince = moment(data.data.RunningSince, "YYYY-MM-DD HH:mm:ss");
+                                     $scope.runningSinceText = $scope.runningSince.from($scope.time, true);
+                                     $scope.timeLocal = moment();
+                                     $scope.stopTime = $interval(runningTime, 1000);
+                                     
+                                     $scope.minRam = data.data.MinRam;
+                                     $scope.maxRam = data.data.MaxRam;
+
+                                     $scope.temperature.c = data.data.TempC;
+                                     $scope.temperature.f = C2F(data.data.TempC);
+                                     $scope.humidityPercentage = data.data.HumPerc;
+                                     $scope.heatIndex.f = heatIndex($scope.temperature.f, $scope.humidityPercentage);
+                                     $scope.heatIndex.c = F2C($scope.heatIndex.f);
+                                     
+
+                                   },
+                                   function error(e) {
+                                     NotifierService.error("Could not load data!", "Error");
+                                     $scope.loaded = false;
+                                   });
+                             }
+
+                           }]);
 
   </script>
   <script id="login">
@@ -751,7 +894,7 @@
                               };
 
                               $scope.ViewFilesButtonName = "View Files";
-                              $scope.loaded = true; //show alternate screen if API fails to refresh
+                              $scope.loaded = true; //if false shows alternate screen if API fails to refresh
                               $scope.time; //stores moment format of the date on the device
                               $scope.stopTime; //used to stop runningTime counter if needed
                               $scope.loading; //used to show system backdrop
@@ -819,7 +962,7 @@
                               function getFiles() {
                                 $scope.loadFiles = greenApiService.getFileList().then(
                                  function success(data) {
-                                   $('#collapseFiles').collapse('show');                                   
+                                   $('#collapseFiles').collapse('show');
                                    $scope.files = data.data;
                                    $scope.fileContent = "";
                                    NotifierService.info("Files loaded!", "Success");
@@ -1016,8 +1159,280 @@
   <script id="startup">
     $(document).ready(function () {
       angular.bootstrap(document, ['greenhouse']);
+
     });
   </script>
 
+  <script id="angular-chart.js">
+    (function () {
+      'use strict';
+
+      Chart.defaults.global.responsive = true;
+      Chart.defaults.global.multiTooltipTemplate = '<%if (datasetLabel){%><%=datasetLabel%>: <%}%><%= value %>';
+
+      Chart.defaults.global.colours = [
+        '#97BBCD', // blue
+        '#DCDCDC', // light grey
+        '#F7464A', // red
+        '#46BFBD', // green
+        '#FDB45C', // yellow
+        '#949FB1', // grey
+        '#4D5360'  // dark grey
+      ];
+
+      angular.module('chart.js', [])
+        .directive('chartBase', function () { return chart(); })
+        .directive('chartLine', function () { return chart('Line'); })
+        .directive('chartBar', function () { return chart('Bar'); })
+        .directive('chartRadar', function () { return chart('Radar'); })
+        .directive('chartDoughnut', function () { return chart('Doughnut'); })
+        .directive('chartPie', function () { return chart('Pie'); })
+        .directive('chartPolarArea', function () { return chart('PolarArea'); });
+
+      function chart(type) {
+        return {
+          restrict: 'CA',
+          scope: {
+            data: '=',
+            labels: '=',
+            options: '=',
+            series: '=',
+            colours: '=?',
+            getColour: '=?',
+            chartType: '=',
+            legend: '@',
+            click: '='
+          },
+          link: function (scope, elem/*, attrs */) {
+            var chart, container = document.createElement('div');
+            container.className = 'chart-container';
+            elem.replaceWith(container);
+            container.appendChild(elem[0]);
+
+            if (typeof window.G_vmlCanvasManager === 'object' && window.G_vmlCanvasManager !== null) {
+              if (typeof window.G_vmlCanvasManager.initElement === 'function') {
+                window.G_vmlCanvasManager.initElement(elem[0]);
+              }
+            }
+
+            // Order of setting "watch" matter
+
+            scope.$watch('data', function (newVal, oldVal) {
+              if (!newVal || !newVal.length || (Array.isArray(newVal[0]) && !newVal[0].length)) return;
+              var chartType = type || scope.chartType;
+              if (!chartType) return;
+
+              if (chart) {
+                if (canUpdateChart(newVal, oldVal)) return updateChart(chart, newVal, scope);
+                chart.destroy();
+              }
+
+              chart = createChart(chartType, scope, elem);
+            }, true);
+
+            scope.$watch('series', resetChart, true);
+            scope.$watch('labels', resetChart, true);
+            scope.$watch('options', resetChart, true);
+            scope.$watch('colours', resetChart, true);
+
+            scope.$watch('chartType', function (newVal, oldVal) {
+              if (isEmpty(newVal)) return;
+              if (angular.equals(newVal, oldVal)) return;
+              if (chart) chart.destroy();
+              chart = createChart(newVal, scope, elem);
+            });
+
+            scope.$on('$destroy', function () {
+              if (chart) chart.destroy();
+            });
+
+            function resetChart(newVal, oldVal) {
+              if (isEmpty(newVal)) return;
+              if (angular.equals(newVal, oldVal)) return;
+              var chartType = type || scope.chartType;
+              if (!chartType) return;
+
+              // chart.update() doesn't work for series and labels
+              // so we have to re-create the chart entirely
+              if (chart) chart.destroy();
+
+              chart = createChart(chartType, scope, elem);
+            }
+          }
+        };
+      }
+
+      function canUpdateChart(newVal, oldVal) {
+        if (newVal && oldVal && newVal.length && oldVal.length) {
+          return Array.isArray(newVal[0]) ?
+          newVal.length === oldVal.length && newVal[0].length === oldVal[0].length :
+            oldVal.reduce(sum, 0) > 0 ? newVal.length === oldVal.length : false;
+        }
+        return false;
+      }
+
+      function sum(carry, val) {
+        return carry + val;
+      }
+
+      function createChart(type, scope, elem) {
+        if (!scope.data || !scope.data.length) return;
+        scope.getColour = typeof scope.getColour === 'function' ? scope.getColour : getRandomColour;
+        scope.colours = getColours(scope);
+        var cvs = elem[0], ctx = cvs.getContext('2d');
+        var data = Array.isArray(scope.data[0]) ?
+          getDataSets(scope.labels, scope.data, scope.series || [], scope.colours) :
+          getData(scope.labels, scope.data, scope.colours);
+        var chart = new Chart(ctx)[type](data, scope.options || {});
+        scope.$emit('create', chart);
+
+        if (scope.click) {
+          cvs.onclick = function (evt) {
+            var click = chart.getPointsAtEvent || chart.getBarsAtEvent || chart.getSegmentsAtEvent;
+
+            if (click) {
+              var activePoints = click.call(chart, evt);
+              scope.click(activePoints, evt);
+              scope.$apply();
+            }
+          };
+        }
+        if (scope.legend && scope.legend !== 'false') setLegend(elem, chart);
+        return chart;
+      }
+
+      function getColours(scope) {
+        var colours = angular.copy(scope.colours) || angular.copy(Chart.defaults.global.colours);
+        while (colours.length < scope.data.length) {
+          colours.push(scope.getColour());
+        }
+        return colours.map(convertColour);
+      }
+
+      function convertColour(colour) {
+        if (typeof colour === 'object' && colour !== null) return colour;
+        if (typeof colour === 'string' && colour[0] === '#') return getColour(hexToRgb(colour.substr(1)));
+        return getRandomColour();
+      }
+
+      function getRandomColour() {
+        var colour = [getRandomInt(0, 255), getRandomInt(0, 255), getRandomInt(0, 255)];
+        return getColour(colour);
+      }
+
+      function getColour(colour) {
+        return {
+          fillColor: rgba(colour, 0.2),
+          strokeColor: rgba(colour, 1),
+          pointColor: rgba(colour, 1),
+          pointStrokeColor: '#fff',
+          pointHighlightFill: '#fff',
+          pointHighlightStroke: rgba(colour, 0.8)
+        };
+      }
+
+      function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function rgba(colour, alpha) {
+        return 'rgba(' + colour.concat(alpha).join(',') + ')';
+      }
+
+      // Credit: http://stackoverflow.com/a/11508164/1190235
+      function hexToRgb(hex) {
+        var bigint = parseInt(hex, 16),
+          r = (bigint >> 16) & 255,
+          g = (bigint >> 8) & 255,
+          b = bigint & 255;
+
+        return [r, g, b];
+      }
+
+      function getDataSets(labels, data, series, colours) {
+        return {
+          labels: labels,
+          datasets: data.map(function (item, i) {
+            var dataSet = angular.copy(colours[i]);
+            dataSet.label = series[i];
+            dataSet.data = item;
+            return dataSet;
+          })
+        };
+      }
+
+      function getData(labels, data, colours) {
+        return labels.map(function (label, i) {
+          return {
+            label: label,
+            value: data[i],
+            color: colours[i].strokeColor,
+            highlight: colours[i].pointHighlightStroke
+          };
+        });
+      }
+
+      function setLegend(elem, chart) {
+        var $parent = elem.parent(),
+            $oldLegend = $parent.find('chart-legend'),
+            legend = '<chart-legend>' + chart.generateLegend() + '</chart-legend>';
+        if ($oldLegend.length) $oldLegend.replaceWith(legend);
+        else $parent.append(legend);
+      }
+
+      function updateChart(chart, values, scope) {
+        if (Array.isArray(scope.data[0])) {
+          chart.datasets.forEach(function (dataset, i) {
+            (dataset.points || dataset.bars).forEach(function (dataItem, j) {
+              dataItem.value = values[i][j];
+            });
+          });
+        } else {
+          chart.segments.forEach(function (segment, i) {
+            segment.value = values[i];
+          });
+        }
+        chart.update();
+        scope.$emit('update', chart);
+      }
+
+      function isEmpty(value) {
+        return !value ||
+          (Array.isArray(value) && !value.length) ||
+          (typeof value === 'object' && !Object.keys(value).length);
+      }
+
+    })();
+
+  </script>
+  <style id="angular-chart.css.map">
+    .chart-legend, .bar-legend, .line-legend, .pie-legend, .radar-legend, .polararea-legend, .doughnut-legend {
+      list-style-type: none;
+      margin-top: 5px;
+      text-align: center;
+    }
+
+      .chart-legend li, .bar-legend li, .line-legend li, .pie-legend li, .radar-legend li, .polararea-legend li, .doughnut-legend li {
+        display: inline-block;
+        white-space: nowrap;
+        position: relative;
+        margin-bottom: 4px;
+        border-radius: 5px;
+        padding: 2px 8px 2px 28px;
+        font-size: smaller;
+        cursor: default;
+      }
+
+        .chart-legend li span, .bar-legend li span, .line-legend li span, .pie-legend li span, .radar-legend li span, .polararea-legend li span, .doughnut-legend li span {
+          display: block;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 20px;
+          height: 20px;
+          border-radius: 5px;
+        }
+    /*# sourceMappingURL=angular-chart.css.map */
+  </style>
 </body>
 </html>
